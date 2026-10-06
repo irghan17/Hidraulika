@@ -1,374 +1,398 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Kalkulator Hidraulika Saluran Terbuka</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --primary: #1e40af;
-    --accent:  #0ea5e9;
-  }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; }
-  .tab-btn { transition: all .2s; }
-  .tab-btn.active {
-    background: #1e40af; color: #fff;
-    box-shadow: 0 2px 8px rgba(30,64,175,.35);
-  }
-  .tab-btn:not(.active):hover { background: #dbeafe; color: #1e40af; }
-  .tab-pane { display: none; }
-  .tab-pane.active { display: block; }
-  .card { background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.08); }
-  .result-good { color:#16a34a; font-weight:600; }
-  .result-warn { color:#d97706; font-weight:600; }
-  .result-bad  { color:#dc2626; font-weight:600; }
-  input[type=number] {
-    width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px;
-    font-size:.9rem; transition: border-color .15s;
-  }
-  input[type=number]:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
-  label { font-size:.82rem; font-weight:600; color:#374151; margin-bottom:2px; display:block; }
-  .section-title {
-    font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    color:#6b7280; border-bottom:1px solid #e5e7eb; padding-bottom:4px; margin-bottom:10px;
-  }
-  table { border-collapse:collapse; width:100%; font-size:.82rem; }
-  th { background:#1e40af; color:#fff; padding:7px 10px; text-align:center; }
-  td { padding:6px 10px; text-align:center; border-bottom:1px solid #e5e7eb; }
-  tr:nth-child(even) td { background:#f8fafc; }
-  .badge {
-    display:inline-block; padding:2px 8px; border-radius:999px; font-size:.72rem; font-weight:700;
-  }
-  .badge-blue  { background:#dbeafe; color:#1e40af; }
-  .badge-green { background:#dcfce7; color:#15803d; }
-  .badge-red   { background:#fee2e2; color:#b91c1c; }
-  .badge-amber { background:#fef3c7; color:#b45309; }
-  canvas { max-height: 380px; }
-  .guide-step {
-    display:flex; gap:12px; align-items:flex-start; padding:12px 0;
-    border-bottom:1px solid #f1f5f9;
-  }
-  .step-num {
-    min-width:30px; height:30px; border-radius:50%; background:#1e40af;
-    color:#fff; display:flex; align-items:center; justify-content:center;
-    font-weight:700; font-size:.85rem; flex-shrink:0;
-  }
-  .formula-box {
-    background:#f0f9ff; border-left:4px solid #0ea5e9;
-    padding:8px 14px; border-radius:0 8px 8px 0;
-    font-family: 'Courier New', monospace; font-size:.82rem; color:#0c4a6e;
-    margin:6px 0;
-  }
-  @media (max-width:640px) {
-    th, td { padding:5px 6px; font-size:.73rem; }
-  }
+/* ======= GLOBAL ======= */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fef9c3 100%);
+  min-height: 100vh;
+  color: #1e293b;
+}
+
+/* ======= CARD ======= */
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+}
+.card-blue  { background: linear-gradient(135deg,#eff6ff,#dbeafe); border: 1px solid #bfdbfe; }
+.card-green { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border: 1px solid #bbf7d0; }
+.card-amber { background: linear-gradient(135deg,#fffbeb,#fef3c7); border: 1px solid #fde68a; }
+.card-red   { background: linear-gradient(135deg,#fff1f2,#ffe4e6); border: 1px solid #fecdd3; }
+.card-purple{ background: linear-gradient(135deg,#faf5ff,#ede9fe); border: 1px solid #ddd6fe; }
+.card-cyan  { background: linear-gradient(135deg,#ecfeff,#cffafe); border: 1px solid #a5f3fc; }
+
+/* ======= TABS ======= */
+.tab-nav { background:#fff; border-radius:16px; padding:6px; box-shadow:0 2px 12px rgba(0,0,0,.08); display:flex; flex-wrap:wrap; gap:4px; }
+.tab-btn {
+  padding: 8px 18px; border-radius: 10px; font-weight: 700; font-size: .82rem;
+  border: none; cursor: pointer; transition: all .2s;
+  color: #64748b; background: transparent;
+}
+.tab-btn:hover { background: #f1f5f9; color: #1e40af; }
+.tab-btn.active {
+  background: linear-gradient(135deg,#1e40af,#0ea5e9);
+  color: #fff; box-shadow: 0 4px 14px rgba(30,64,175,.35);
+}
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ======= INPUTS ======= */
+.inp-group label {
+  font-size: .73rem; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: #475569; margin-bottom: 3px; display: block;
+}
+input[type=number] {
+  width: 100%; padding: 8px 11px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: .88rem; color: #1e293b; background: #f8fafc;
+  transition: border-color .15s, box-shadow .15s;
+}
+input[type=number]:focus {
+  outline: none; border-color: #3b82f6; background: #fff;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+
+/* ======= METRIC CARDS ======= */
+.metric-card {
+  border-radius: 14px; padding: 14px 12px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.metric-card .m-val { font-size: 1.4rem; font-weight: 800; line-height: 1.1; }
+.metric-card .m-lbl { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-top: 2px; opacity: .75; }
+.metric-card .m-sub { font-size: .7rem; margin-top: 3px; opacity: .65; }
+.metric-card::after {
+  content: ''; position: absolute; top: -15px; right: -15px;
+  width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,.2);
+}
+
+/* ======= TABLE ======= */
+.htable { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.htable thead tr { background: linear-gradient(90deg,#1e3a5f,#1e4d8c); }
+.htable th { color: #bfdbfe; padding: 9px 11px; font-weight: 700; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+.htable th:first-child { text-align: left; border-radius: 8px 0 0 0; }
+.htable th:last-child  { border-radius: 0 8px 0 0; }
+.htable td { padding: 7px 11px; border-bottom: 1px solid #f1f5f9; color: #334155; text-align: center; }
+.htable td:first-child { text-align: left; color: #1e293b; font-weight: 600; }
+.htable tr:hover td { background: #f0f9ff; }
+.htable tr:nth-child(even) td { background: #f8fafc; }
+.htable tr:nth-child(even):hover td { background: #e0f2fe; }
+
+/* ======= BADGES ======= */
+.bdg { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700; }
+.bdg-blue   { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.bdg-green  { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.bdg-red    { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.bdg-amber  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.bdg-purple { background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
+.bdg-cyan   { background: #cffafe; color: #0e7490; border: 1px solid #a5f3fc; }
+
+/* ======= SECTION TITLE ======= */
+.stitle {
+  font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: #94a3b8; padding-bottom: 8px; margin-bottom: 14px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+/* ======= JUMP BOX ======= */
+.jump-box { border-radius: 12px; padding: 14px 16px; border-left: 5px solid; }
+.jump-undular { background: #faf5ff; border-color: #8b5cf6; color: #5b21b6; }
+.jump-weak    { background: #fffbeb; border-color: #f59e0b; color: #78350f; }
+.jump-osc     { background: #fff7ed; border-color: #f97316; color: #7c2d12; }
+.jump-steady  { background: #f0fdf4; border-color: #22c55e; color: #14532d; }
+.jump-strong  { background: #fff1f2; border-color: #ef4444; color: #7f1d1d; }
+.jump-none    { background: #f0f9ff; border-color: #0ea5e9; color: #0c4a6e; }
+
+/* ======= FORMULA BOX ======= */
+.fbox {
+  background: #f0f9ff; border-left: 4px solid #0ea5e9;
+  padding: 8px 14px; border-radius: 0 8px 8px 0;
+  font-family: 'Courier New', monospace; font-size: .78rem; color: #0c4a6e;
+  margin: 5px 0; line-height: 1.8;
+}
+
+/* ======= PBAR ======= */
+.pbar { height: 8px; border-radius: 4px; overflow: hidden; background: #f1f5f9; }
+.pbar-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+
+/* ======= BUTTON ======= */
+.btn-primary {
+  background: linear-gradient(135deg,#1d4ed8,#0891b2);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 12px 24px; font-weight: 700; font-size: .9rem;
+  cursor: pointer; transition: all .2s; width: 100%;
+  box-shadow: 0 4px 14px rgba(29,78,216,.3);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(29,78,216,.4); }
+.btn-primary:active { transform: translateY(0); }
+
+/* ======= INFO ROW ======= */
+.info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; border-radius: 8px; font-size: .8rem;
+  background: #f8fafc; margin-bottom: 3px;
+}
+.info-row .ir-label { color: #64748b; }
+.info-row .ir-val   { color: #1e293b; font-weight: 700; }
+
+/* ======= GUIDE STEPS ======= */
+.guide-step { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+.step-num {
+  min-width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg,#1d4ed8,#0891b2);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .85rem; flex-shrink: 0;
+}
+
+/* ======= RESPONSIVE ======= */
+@media(max-width:640px) {
+  .htable th, .htable td { padding: 5px 7px; font-size: .72rem; }
+  .metric-card .m-val { font-size: 1.1rem; }
+}
+
+/* ======= CANVAS ======= */
+canvas { max-height: 380px; }
 </style>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body>
 
-<!-- ===== HEADER ===== -->
-<header class="bg-gradient-to-r from-blue-800 to-sky-600 text-white shadow-lg">
-  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center gap-2">
-    <div class="text-3xl">🌊</div>
-    <div>
-      <h1 class="text-xl font-bold leading-tight">Kalkulator Hidraulika Saluran Terbuka</h1>
-      <p class="text-sky-200 text-xs">Aliran Tetap · Pintu Air · Bendung · Penyempitan · Standard Step</p>
+<!-- ============================================================
+     HEADER
+============================================================= -->
+<header style="background: linear-gradient(135deg,#1e3a5f 0%,#1e40af 40%,#0e7490 100%)">
+  <div class="max-w-7xl mx-auto px-4 py-5">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-4">
+        <div style="background:rgba(255,255,255,.15);border-radius:16px;padding:10px;font-size:2rem;line-height:1">🌊</div>
+        <div>
+          <h1 style="color:#fff;font-size:1.25rem;font-weight:900;margin:0;line-height:1.2">Kalkulator Hidraulika Saluran Terbuka</h1>
+          <p style="color:#7dd3fc;font-size:.75rem;margin:3px 0 0;font-weight:500">Aliran Tetap · Pintu Air · Bendung · Penyempitan · Loncat Hidrolik · Standard Step</p>
+        </div>
+      </div>
+      <div id="hdr-stats" class="flex gap-4" style="color:#fff"></div>
     </div>
   </div>
 </header>
 
-<!-- ===== TABS ===== -->
-<div class="max-w-6xl mx-auto px-4 mt-5">
-  <div class="flex flex-wrap gap-2 mb-4">
-    <button class="tab-btn active px-4 py-2 rounded-lg font-semibold text-sm border border-blue-200" onclick="switchTab('input',this)">📥 Input Data</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm border border-blue-200" onclick="switchTab('hasil',this)">📊 Kalkulasi & Hasil</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm border border-blue-200" onclick="switchTab('grafik',this)">📈 Visualisasi Grafik</button>
-    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm border border-blue-200" onclick="switchTab('panduan',this)">📖 Panduan</button>
+<!-- ============================================================
+     MAIN
+============================================================= -->
+<div class="max-w-7xl mx-auto px-4 py-5">
+
+  <!-- TABS -->
+  <div class="tab-nav mb-5">
+    <button class="tab-btn active" onclick="switchTab('input',this)">📥 Input Data</button>
+    <button class="tab-btn" onclick="switchTab('hasil',this)">📊 Hasil &amp; Analisis</button>
+    <button class="tab-btn" onclick="switchTab('loncat',this)">💦 Loncat Hidrolik</button>
+    <button class="tab-btn" onclick="switchTab('grafik',this)">📈 Visualisasi Grafik</button>
+    <button class="tab-btn" onclick="switchTab('panduan',this)">📖 Panduan</button>
   </div>
 
-  <!-- ==============================
-       TAB 1 : INPUT DATA
-  =============================== -->
+  <!-- ==========================
+       TAB INPUT
+  =========================== -->
   <div id="tab-input" class="tab-pane active">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
       <!-- Saluran -->
       <div class="card p-5">
-        <div class="section-title">A. Data Saluran (Trapesium / Persegi)</div>
+        <div class="stitle" style="color:#1d4ed8;border-color:#dbeafe">🏞️ Data Saluran Trapesium</div>
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label>Debit Q (m³/s)</label>
-            <input type="number" id="inp_Q" value="3.000" step="0.001" min="0.001" />
-          </div>
-          <div>
-            <label>Lebar dasar b (m)</label>
-            <input type="number" id="inp_b" value="2.000" step="0.01" min="0.01" />
-          </div>
-          <div>
-            <label>Talud m (m=0 → persegi)</label>
-            <input type="number" id="inp_m" value="1.000" step="0.1" min="0" />
-          </div>
-          <div>
-            <label>Manning n</label>
-            <input type="number" id="inp_n" value="0.0130" step="0.0001" min="0.001" />
-          </div>
-          <div>
-            <label>Kemiringan dasar S₀</label>
-            <input type="number" id="inp_S0" value="0.00100" step="0.00001" min="0.000001" />
-          </div>
-          <div>
-            <label>Gravitasi g (m/s²)</label>
-            <input type="number" id="inp_g" value="9.81" step="0.01" min="9" />
-          </div>
-          <div>
-            <label>Koef. kontraksi Cc</label>
-            <input type="number" id="inp_Cc" value="1.000" step="0.01" min="0.1" max="1" />
-          </div>
+          <div class="inp-group"><label>Debit Q (m³/s)</label><input type="number" id="inp_Q" value="3.000" step="0.001" min="0.001"/></div>
+          <div class="inp-group"><label>Lebar dasar b (m)</label><input type="number" id="inp_b" value="2.000" step="0.01" min="0.01"/></div>
+          <div class="inp-group"><label>Talud m (0=persegi)</label><input type="number" id="inp_m" value="1.000" step="0.1" min="0"/></div>
+          <div class="inp-group"><label>Manning n</label><input type="number" id="inp_n" value="0.0130" step="0.0001" min="0.001"/></div>
+          <div class="inp-group"><label>Kemiringan S₀</label><input type="number" id="inp_S0" value="0.00100" step="0.000001" min="0.000001"/></div>
+          <div class="inp-group"><label>Gravitasi g (m/s²)</label><input type="number" id="inp_g" value="9.81" step="0.01" min="9"/></div>
+          <div class="inp-group"><label>Koef. kontraksi Cc</label><input type="number" id="inp_Cc" value="1.000" step="0.01" min="0.1" max="1"/></div>
         </div>
-        <div class="mt-3 p-3 bg-blue-50 rounded-lg text-xs text-blue-800">
-          <b>ℹ️ Petunjuk:</b> m = 0 untuk saluran persegi panjang. Cc ≈ 0.61 untuk pintu sorong nyata, atau 1.0 seperti contoh dosen.
+        <div class="mt-3 p-3 rounded-xl card-blue text-xs" style="color:#1e40af">
+          <b>ℹ️</b> m=0 → saluran persegi. Cc≈0.61 pintu sorong nyata, Cc=1.0 contoh dosen.
         </div>
       </div>
 
-      <!-- Bangunan Air -->
+      <!-- Bangunan -->
       <div class="card p-5">
-        <div class="section-title">B. Data Bangunan Air</div>
+        <div class="stitle" style="color:#0e7490;border-color:#a5f3fc">🏗️ Data Bangunan Air</div>
 
-        <div class="mb-4">
-          <div class="text-xs font-bold text-sky-700 mb-2">🚪 Pintu Air (Sluice Gate)</div>
+        <div class="rounded-xl p-3 mb-3" style="background:#f0f9ff;border:1.5px solid #bae6fd">
+          <div class="text-xs font-bold mb-2" style="color:#0369a1">🚪 Pintu Air (Sluice Gate)</div>
           <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label>Bukaan pintu a (m)</label>
-              <input type="number" id="inp_a" value="0.400" step="0.01" min="0.01" />
-            </div>
-            <div>
-              <label>Target kenaikan hulu Δh (m)</label>
-              <input type="number" id="inp_dh" value="0.500" step="0.01" min="0" />
-            </div>
+            <div class="inp-group"><label>Bukaan a (m)</label><input type="number" id="inp_a" value="0.400" step="0.01" min="0.001"/></div>
+            <div class="inp-group"><label>Target Δh (m)</label><input type="number" id="inp_dh" value="0.500" step="0.01" min="0"/></div>
           </div>
         </div>
 
-        <div class="mb-4">
-          <div class="text-xs font-bold text-sky-700 mb-2">🪨 Bendung / Ambang</div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label>Tinggi bendung Δz (m)</label>
-              <input type="number" id="inp_Dz" value="0.700" step="0.01" min="0" />
-            </div>
-          </div>
+        <div class="rounded-xl p-3 mb-3" style="background:#faf5ff;border:1.5px solid #ddd6fe">
+          <div class="text-xs font-bold mb-2" style="color:#7c3aed">🪨 Bendung / Ambang</div>
+          <div class="inp-group"><label>Tinggi bendung Δz (m)</label><input type="number" id="inp_Dz" value="0.700" step="0.01" min="0"/></div>
         </div>
 
-        <div class="mb-4">
-          <div class="text-xs font-bold text-sky-700 mb-2">↔️ Penyempitan / Pelebaran</div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label>Lebar penampang b₂ (m)</label>
-              <input type="number" id="inp_b2" value="1.500" step="0.1" min="0.1" />
-            </div>
-          </div>
+        <div class="rounded-xl p-3 mb-4" style="background:#f0fdf4;border:1.5px solid #bbf7d0">
+          <div class="text-xs font-bold mb-2" style="color:#15803d">↔️ Penyempitan / Pelebaran</div>
+          <div class="inp-group"><label>Lebar b₂ (m)</label><input type="number" id="inp_b2" value="1.500" step="0.1" min="0.1"/></div>
         </div>
 
-        <button onclick="calculate()" class="mt-2 w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl shadow transition-all text-sm">
-          ⚡ Hitung Semua Skenario
-        </button>
+        <button class="btn-primary" onclick="calculate()">⚡ Hitung Semua Skenario</button>
+      </div>
+
+      <!-- Quick hasil -->
+      <div class="card p-5">
+        <div class="stitle" style="color:#15803d;border-color:#bbf7d0">⚡ Hasil Cepat</div>
+        <div id="quick-grid" class="grid grid-cols-2 gap-3 mb-4"></div>
+        <div id="quick-extra"></div>
       </div>
 
     </div>
+  </div><!-- /tab-input -->
 
-    <!-- Quick result preview -->
-    <div id="quick-preview" class="card mt-4 p-5 hidden">
-      <div class="section-title">Hasil Cepat (Kondisi Dasar)</div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="quick-cards"></div>
-    </div>
-  </div>
-
-  <!-- ==============================
-       TAB 2 : KALKULASI & HASIL
-  =============================== -->
+  <!-- ==========================
+       TAB HASIL
+  =========================== -->
   <div id="tab-hasil" class="tab-pane">
     <div id="hasil-content">
-      <div class="card p-10 text-center text-slate-400">
-        <div class="text-4xl mb-3">🔢</div>
-        <p>Belum ada hasil. Isi data di Tab <b>Input</b> lalu klik <b>Hitung</b>.</p>
+      <div class="card p-16 text-center" style="color:#94a3b8">
+        <div style="font-size:3rem;margin-bottom:12px">🔢</div>
+        <p>Belum ada hasil. Isi data di tab <b style="color:#1e40af">Input Data</b> lalu klik <b style="color:#1e40af">Hitung</b>.</p>
       </div>
     </div>
   </div>
 
-  <!-- ==============================
-       TAB 3 : GRAFIK
-  =============================== -->
+  <!-- ==========================
+       TAB LONCAT HIDROLIK
+  =========================== -->
+  <div id="tab-loncat" class="tab-pane">
+    <div id="loncat-content">
+      <div class="card p-16 text-center" style="color:#94a3b8">
+        <div style="font-size:3rem;margin-bottom:12px">💦</div>
+        <p>Hitung dulu di tab <b style="color:#1e40af">Input Data</b>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================
+       TAB GRAFIK
+  =========================== -->
   <div id="tab-grafik" class="tab-pane">
     <div id="grafik-content">
-      <div class="card p-10 text-center text-slate-400">
-        <div class="text-4xl mb-3">📈</div>
-        <p>Belum ada grafik. Isi data di Tab <b>Input</b> lalu klik <b>Hitung</b>.</p>
+      <div class="card p-16 text-center" style="color:#94a3b8">
+        <div style="font-size:3rem;margin-bottom:12px">📈</div>
+        <p>Hitung dulu di tab <b style="color:#1e40af">Input Data</b>.</p>
       </div>
     </div>
   </div>
 
-  <!-- ==============================
-       TAB 4 : PANDUAN
-  =============================== -->
+  <!-- ==========================
+       TAB PANDUAN
+  =========================== -->
   <div id="tab-panduan" class="tab-pane">
-    <div class="card p-6 mb-4">
-      <h2 class="text-lg font-bold text-blue-800 mb-4">📖 Panduan Penggunaan</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-      <div class="guide-step">
-        <div class="step-num">1</div>
-        <div>
-          <b>Isi Data Saluran</b> di Tab Input.<br/>
-          <span class="text-slate-500 text-sm">Masukkan Q, b, m, n, S₀. Untuk saluran persegi, set m = 0.</span>
+      <div class="card p-6">
+        <h2 style="font-size:1.1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px">📖 Langkah Penggunaan</h2>
+        <div class="guide-step"><div class="step-num">1</div><div><b style="color:#1e3a5f">Isi Data Saluran</b><br/><span style="color:#64748b;font-size:.82rem">Q, b, m, n, S₀, g, Cc. Set m=0 untuk saluran persegi panjang.</span></div></div>
+        <div class="guide-step"><div class="step-num">2</div><div><b style="color:#1e3a5f">Isi Data Bangunan Air</b><br/><span style="color:#64748b;font-size:.82rem">Bukaan pintu a, tinggi bendung Δz, lebar penyempitan b₂.</span></div></div>
+        <div class="guide-step"><div class="step-num">3</div><div><b style="color:#1e3a5f">Klik Hitung (atau ubah input — auto)</b><br/><span style="color:#64748b;font-size:.82rem">Hasil muncul di semua tab secara otomatis.</span></div></div>
+        <div class="guide-step"><div class="step-num">4</div><div><b style="color:#1e3a5f">Baca Tab Loncat Hidrolik</b><br/><span style="color:#64748b;font-size:.82rem">Tipe loncatan, kehilangan energi, panjang loncatan, diagram skematik.</span></div></div>
+        <div class="guide-step"><div class="step-num">5</div><div><b style="color:#1e3a5f">Eksplorasi Visualisasi Grafik</b><br/><span style="color:#64748b;font-size:.82rem">Hover untuk nilai detail. Klik legenda untuk sembunyikan seri.</span></div></div>
+      </div>
+
+      <div class="card p-6">
+        <h2 style="font-size:1.1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px">📐 Formula Kunci</h2>
+        <div style="font-size:.82rem;color:#475569;line-height:1.7">
+          <p><b style="color:#1e40af">Manning (yn):</b></p>
+          <div class="fbox">Q = (1/n)·A·R^(2/3)·S₀^½<br>A=(b+m·y)·y   P=b+2y√(1+m²)   R=A/P</div>
+          <p class="mt-2"><b style="color:#0e7490">Kedalaman Kritis (yc):</b></p>
+          <div class="fbox">g·A³/T = Q²   (Fr = 1)<br>T = b + 2m·y</div>
+          <p class="mt-2"><b style="color:#7c3aed">Energi &amp; Gaya Spesifik:</b></p>
+          <div class="fbox">Es = y + Q²/(2g·A²)<br>Fs = Q²/(g·A) + b·y²/2 + m·y³/3</div>
+          <p class="mt-2"><b style="color:#d97706">Loncatan Hidrolik:</b></p>
+          <div class="fbox">Fs(y₁) = Fs(y₂) → y₂ konjugat<br>ΔE = Es(y₁) − Es(y₂)  [kehilangan energi]<br>L_j ≈ 6·(y₂−y₁)  [Peterka empiris]</div>
+          <p class="mt-2"><b style="color:#be185d">Standard Step (profil):</b></p>
+          <div class="fbox">Sf = (n·V/R^(2/3))²<br>ΔX = (E₂−E₁) / (S₀ − S̄f)</div>
         </div>
       </div>
-      <div class="guide-step">
-        <div class="step-num">2</div>
-        <div>
-          <b>Isi Data Bangunan Air</b> sesuai skenario yang diinginkan.<br/>
-          <span class="text-slate-500 text-sm">Bisa 1 atau lebih skenario sekaligus (pintu, bendung, penyempitan).</span>
-        </div>
-      </div>
-      <div class="guide-step">
-        <div class="step-num">3</div>
-        <div>
-          <b>Klik "Hitung Semua Skenario"</b> atau ubah nilai input (auto-hitung).<br/>
-          <span class="text-slate-500 text-sm">Hasil muncul otomatis di Tab Hasil dan Tab Grafik.</span>
-        </div>
-      </div>
-      <div class="guide-step">
-        <div class="step-num">4</div>
-        <div>
-          <b>Baca Tab Kalkulasi & Hasil</b> — ringkasan 4 kedalaman acuan, Es, Fs, Fr, dan jarak profil.<br/>
-          <span class="text-slate-500 text-sm">Warna hijau = kondisi normal; merah = terbendung/kritis.</span>
-        </div>
-      </div>
-      <div class="guide-step">
-        <div class="step-num">5</div>
-        <div>
-          <b>Lihat Tab Visualisasi Grafik</b> untuk Kurva E–y dan Profil Muka Air.<br/>
-          <span class="text-slate-500 text-sm">Grafik interaktif: hover untuk nilai, klik legenda untuk sembunyikan/tampilkan seri.</span>
-        </div>
-      </div>
+
+      
     </div>
+  </div><!-- /panduan -->
 
-    <div class="card p-6 mb-4">
-      <h2 class="text-lg font-bold text-blue-800 mb-3">📐 Logika Hidraulika</h2>
-      <div class="space-y-3 text-sm text-slate-700">
+</div><!-- /max-w -->
 
-        <div>
-          <b class="text-blue-700">1. Kedalaman Normal (yn)</b> — dihitung dari Manning dengan metode biseksi:
-          <div class="formula-box">Q = (1/n) · A · R^(2/3) · S₀^(1/2)</div>
-          Jika yn &gt; yc → saluran <b>landai</b> (aliran normal subkritis).
-        </div>
-
-        <div>
-          <b class="text-blue-700">2. Kedalaman Kritis (yc)</b> — kondisi Froude = 1:
-          <div class="formula-box">g · A³ / T = Q²</div>
-          Diselesaikan dengan biseksi pada fungsi f(y) = g·A³/T − Q².
-        </div>
-
-        <div>
-          <b class="text-blue-700">3. Energi Spesifik (Es) &amp; Gaya Spesifik (Fs)</b>
-          <div class="formula-box">Es = y + Q²/(2g·A²)
-Fs = Q²/(g·A) + b·y²/2 + m·y³/3</div>
-          Satu nilai Es punya dua kedalaman (subkritis &amp; superkritis).
-        </div>
-
-        <div>
-          <b class="text-blue-700">4. Pintu Air</b>
-          <div class="formula-box">y₁ = Cc · a  → superkritis di hilir pintu
-E_hulu = E_hilir = Es(y₁)  → cari y_sub (subkritis)</div>
-        </div>
-
-        <div>
-          <b class="text-blue-700">5. Bendung</b>
-          <div class="formula-box">E₂ = E₁ − Δz
-Jika E₂ &lt; Emin → TERBENDUNG
-  E_hulu = Emin + Δz, cari y_sub hulu baru
-  y kaki = cabang superkritis pada E_hulu</div>
-        </div>
-
-        <div>
-          <b class="text-blue-700">6. Penyempitan</b>
-          <div class="formula-box">Hitung yc₂ dan Emin₂ pada lebar b₂
-Jika E₁ &lt; Emin₂ → TERBENDUNG
-  E_hulu = Emin₂, cari y_sub pada lebar b</div>
-        </div>
-
-        <div>
-          <b class="text-blue-700">7. Loncatan Hidrolik</b>
-          <div class="formula-box">Kedalaman konjugat: cari y₂ sehingga Fs(y₂) = Fs(y₁)
-y₂ > yn → loncatan di hilir bangunan</div>
-        </div>
-
-        <div>
-          <b class="text-blue-700">8. Profil Muka Air — Standard Step</b>
-          <div class="formula-box">Sf = (n·V / R^(2/3))²
-ΔX = (E_hilir − E_hulu) / (S₀ − S̄f)</div>
-          Kurva M1: subkritis y_sub → yn(1+ε), hitung ke hulu.<br/>
-          Kurva M3: superkritis y₁ → y_j, hitung ke hilir.
-        </div>
-      </div>
-    </div>
-
-    
-  </div><!-- end panduan -->
-
-</div><!-- end max-w -->
-
-<footer class="text-center text-xs text-slate-400 py-6 mt-8">
-  Kalkulator Hidraulika Saluran Terbuka • Aliran Tetap • Dibuat dengan HTML + Chart.js + Tailwind CSS
+<footer style="text-align:center;font-size:.75rem;color:#94a3b8;padding:24px;margin-top:16px">
+  Kalkulator Hidraulika Saluran Terbuka · Aliran Tetap · HTML + Chart.js + Tailwind CSS
 </footer>
 
-<!-- =====================================================================
-     JAVASCRIPT — ENGINE
-====================================================================== -->
+<!-- ============================================================
+     JAVASCRIPT ENGINE
+============================================================= -->
 <script>
 'use strict';
 
-/* ─── Tab Navigation ─── */
+/* ─────────────────────────────────────
+   TAB NAVIGATION
+───────────────────────────────────── */
 function switchTab(name, btn) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
 }
 
-/* ─── Hydraulic primitives ─── */
-function area(y, b, m)   { return (b + m * y) * y; }
-function perim(y, b, m)  { return b + 2 * y * Math.sqrt(1 + m * m); }
-function topW(y, b, m)   { return b + 2 * m * y; }
-function hydR(y, b, m)   { const A = area(y, b, m); return A / perim(y, b, m); }
-function vel(y, Q, b, m) { return Q / area(y, b, m); }
+/* ─────────────────────────────────────
+   HYDRAULIC PRIMITIVES
+   (use verbose names — no single-letter globals)
+───────────────────────────────────── */
+function hArea(y, b, m)  { return (b + m * y) * y; }
+function hPerim(y, b, m) { return b + 2 * y * Math.sqrt(1 + m * m); }
+function hTopW(y, b, m)  { return b + 2 * m * y; }
+function hHydR(y, b, m)  { return hArea(y, b, m) / hPerim(y, b, m); }
+function hVel(y, Q, b, m){ return Q / hArea(y, b, m); }
 
-function Es(y, Q, g, b, m) {
-  const A = area(y, b, m);
-  return y + (Q * Q) / (2 * g * A * A);
+function hFr(y, Q, g, b, m) {
+  var a = hArea(y, b, m), t = hTopW(y, b, m);
+  return (Q / a) / Math.sqrt(g * a / t);
 }
 
-function Fs(y, Q, g, b, m) {
-  const A = area(y, b, m);
-  return (Q * Q) / (g * A) + b * y * y / 2 + m * y * y * y / 3;
+function hEs(y, Q, g, b, m) {
+  var a = hArea(y, b, m);
+  return y + (Q * Q) / (2 * g * a * a);
 }
 
-function Fr(y, Q, g, b, m) {
-  const A = area(y, b, m), T = topW(y, b, m), V = Q / A;
-  return V / Math.sqrt(g * A / T);
+function hFs(y, Q, g, b, m) {
+  var a = hArea(y, b, m);
+  return (Q * Q) / (g * a) + b * y * y / 2 + m * y * y * y / 3;
 }
 
-function manningQ(y, n, S0, b, m) {
-  const A = area(y, b, m), R = hydR(y, b, m);
-  return (1 / n) * A * Math.pow(R, 2 / 3) * Math.sqrt(S0);
+function hSf(y, Q, n, b, m) {
+  var v = hVel(y, Q, b, m), r = hHydR(y, b, m);
+  var x = n * v / Math.pow(r, 2/3);
+  return x * x;
 }
 
-/* ─── Bisection solver ─── */
-function bisect(f, lo, hi, tol = 1e-7, maxIter = 200) {
-  let flo = f(lo), fhi = f(hi);
-  if (flo * fhi > 0) return null; // no root bracketed
-  for (let i = 0; i < maxIter; i++) {
-    const mid = (lo + hi) / 2;
-    const fmid = f(mid);
+function hManningQ(y, n, S0, b, m) {
+  var a = hArea(y, b, m), r = hHydR(y, b, m);
+  return (1 / n) * a * Math.pow(r, 2/3) * Math.sqrt(S0);
+}
+
+/* ─────────────────────────────────────
+   BISECTION SOLVER
+───────────────────────────────────── */
+function bisect(fn, lo, hi, tol, maxIter) {
+  tol = tol || 1e-8;
+  maxIter = maxIter || 400;
+  var flo = fn(lo), fhi = fn(hi);
+  if (flo * fhi > 0) return null;
+  for (var i = 0; i < maxIter; i++) {
+    var mid = (lo + hi) / 2;
+    var fmid = fn(mid);
     if (Math.abs(fmid) < tol || (hi - lo) / 2 < tol) return mid;
     if (flo * fmid < 0) { hi = mid; fhi = fmid; }
     else { lo = mid; flo = fmid; }
@@ -376,714 +400,903 @@ function bisect(f, lo, hi, tol = 1e-7, maxIter = 200) {
   return (lo + hi) / 2;
 }
 
-/* ─── Find yn (normal depth) ─── */
-function findYn(Q, n, S0, b, m, yMax = 20) {
-  return bisect(y => manningQ(y, n, S0, b, m) - Q, 1e-4, yMax);
+function findYn(Q, n, S0, b, m) {
+  return bisect(function(y){ return hManningQ(y, n, S0, b, m) - Q; }, 1e-5, 30);
 }
 
-/* ─── Find yc (critical depth) ─── */
-function findYc(Q, g, b, m, yMax = 20) {
-  return bisect(y => {
-    const A = area(y, b, m), T = topW(y, b, m);
-    return g * A * A * A / T - Q * Q;
-  }, 1e-4, yMax);
+function findYc(Q, g, b, m) {
+  return bisect(function(y){
+    var a = hArea(y, b, m), t = hTopW(y, b, m);
+    return g * a * a * a / t - Q * Q;
+  }, 1e-5, 30);
 }
 
-/* ─── Find y given Es target (branch: 'sub' y>=yc, 'super' y<yc) ─── */
-function findYfromEs(Etarget, Q, g, b, m, yc, branch) {
+/* branch: 'sub' → y >= yc  |  'super' → y < yc */
+function findEsY(Etarget, Q, g, b, m, yc, branch) {
   if (branch === 'sub') {
-    // search from yc upward
-    return bisect(y => Es(y, Q, g, b, m) - Etarget, yc, 30);
+    return bisect(function(y){ return hEs(y, Q, g, b, m) - Etarget; }, yc + 1e-8, 30);
   } else {
-    // search from 0 to yc
-    return bisect(y => Es(y, Q, g, b, m) - Etarget, 1e-5, yc - 1e-7);
+    return bisect(function(y){ return hEs(y, Q, g, b, m) - Etarget; }, 1e-7, yc - 1e-8);
   }
 }
 
-/* ─── Find y given Fs target (branch: 'sub' y>=yc, 'super' y<yc) ─── */
-function findYfromFs(Ftarget, Q, g, b, m, yc, branch) {
+function findFsY(Ftarget, Q, g, b, m, yc, branch) {
   if (branch === 'sub') {
-    return bisect(y => Fs(y, Q, g, b, m) - Ftarget, yc, 30);
+    return bisect(function(y){ return hFs(y, Q, g, b, m) - Ftarget; }, yc + 1e-8, 30);
   } else {
-    return bisect(y => Fs(y, Q, g, b, m) - Ftarget, 1e-5, yc - 1e-7);
+    return bisect(function(y){ return hFs(y, Q, g, b, m) - Ftarget; }, 1e-7, yc - 1e-8);
   }
 }
 
-/* ─── Standard Step ─── */
-function standardStep(y_start, y_end, n, S0, Q, g, b, m, nSteps = 60) {
-  const steps = [];
-  const isSubcrit = y_start >= y_end ? y_start > y_end / 1 : false;
-  // direction: for M1 sub: y decreases from y_sub to yn → integrate toward upstream
-  // We always integrate from y_start → y_end in nSteps
-  const dy = (y_end - y_start) / nSteps;
-  let x = 0;
-  let y_cur = y_start;
-
-  const Sf_calc = (y) => {
-    const A = area(y, b, m), R = hydR(y, b, m), V = Q / A;
-    return Math.pow(n * V / Math.pow(R, 2 / 3), 2);
-  };
-
-  steps.push({ x: 0, y: y_cur, Es: Es(y_cur, Q, g, b, m) });
-
-  for (let i = 0; i < nSteps; i++) {
-    const y1 = y_cur;
-    const y2 = y_cur + dy;
-    const E1 = Es(y1, Q, g, b, m);
-    const E2 = Es(y2, Q, g, b, m);
-    const Sf1 = Sf_calc(y1);
-    const Sf2 = Sf_calc(y2);
-    const Sf_avg = (Sf1 + Sf2) / 2;
-    const denom = S0 - Sf_avg;
-    if (Math.abs(denom) < 1e-12) { y_cur = y2; continue; }
-    const dX = (E2 - E1) / denom;
-    x += dX;
-    y_cur = y2;
-    steps.push({ x, y: y_cur, Es: E2 });
+/* ─────────────────────────────────────
+   STANDARD STEP
+───────────────────────────────────── */
+function standardStep(y0, yEnd, n, S0, Q, g, b, m, nSteps) {
+  nSteps = nSteps || 80;
+  var dy = (yEnd - y0) / nSteps;
+  var x = 0, yCur = y0;
+  var pts = [{ x: 0, y: yCur }];
+  for (var i = 0; i < nSteps; i++) {
+    var y1 = yCur, y2 = yCur + dy;
+    if (y2 < 1e-6) break;
+    var E1 = hEs(y1, Q, g, b, m), E2 = hEs(y2, Q, g, b, m);
+    var sf1 = hSf(y1, Q, n, b, m), sf2 = hSf(y2, Q, n, b, m);
+    var sfAvg = (sf1 + sf2) / 2;
+    var denom = S0 - sfAvg;
+    if (Math.abs(denom) < 1e-13) { yCur = y2; continue; }
+    x += (E2 - E1) / denom;
+    yCur = y2;
+    pts.push({ x: x, y: yCur });
   }
-  return steps;
+  return pts;
 }
 
-/* ─── Main Calculation ─── */
-let G = {}; // global results store
-let chartEs = null, chartProfile = null;
+/* ─────────────────────────────────────
+   HYDRAULIC JUMP ANALYSIS
+───────────────────────────────────── */
+function jumpAnalysis(y1, y2, Q, g, b, m) {
+  if (!y1 || !y2 || isNaN(y1) || isNaN(y2) || y1 <= 0 || y2 <= 0) return null;
+  var Fr1 = hFr(y1, Q, g, b, m);
+  var Fr2 = hFr(y2, Q, g, b, m);
+  var Es1 = hEs(y1, Q, g, b, m);
+  var Es2 = hEs(y2, Q, g, b, m);
+  var dE  = Es1 - Es2;
+  var effLoss     = (dE / Es1) * 100;
+  var effRetained = 100 - effLoss;
+  var Lj_peterka  = 6 * (y2 - y1);
+  var Lj_silvester= 5.08 * y1 * Math.pow(Fr1, 1.08);
+  /* Belanger equation check (rectangular approx for reference) */
+  var y2_belanger = (y1 / 2) * (Math.sqrt(1 + 8 * Fr1 * Fr1) - 1);
 
+  /* Classification */
+  var type, desc, cssClass, emoji;
+  if (Fr1 < 1.0) {
+    type = 'Tidak Ada Loncatan'; desc = 'Aliran subkritis, tidak terjadi loncat hidrolik.';
+    cssClass = 'jump-none'; emoji = '✅';
+  } else if (Fr1 <= 1.7) {
+    type = 'Undular Jump (Gelombang)'; desc = 'Fr₁ 1.0–1.7: Permukaan bergelombang, efisiensi tinggi, kurang stabil. Tidak ideal sebagai peredam energi.';
+    cssClass = 'jump-undular'; emoji = '〰️';
+  } else if (Fr1 <= 2.5) {
+    type = 'Weak Jump (Lemah)'; desc = 'Fr₁ 1.7–2.5: Loncatan lemah, riak kecil di permukaan hilir. Kehilangan energi kecil.';
+    cssClass = 'jump-weak'; emoji = '〜';
+  } else if (Fr1 <= 4.5) {
+    type = 'Oscillating Jump (Berosilasi)'; desc = 'Fr₁ 2.5–4.5: Jet bergantian dari atas ke bawah, tidak stabil. Perlu kolam olak khusus.';
+    cssClass = 'jump-osc'; emoji = '🌀';
+  } else if (Fr1 <= 9.0) {
+    type = 'Steady Jump (Tetap) ✓ TERBAIK'; desc = 'Fr₁ 4.5–9.0: Loncatan stabil, efisiensi peredaman energi tertinggi. Ideal untuk desain kolam olak.';
+    cssClass = 'jump-steady'; emoji = '⭐';
+  } else {
+    type = 'Strong Jump (Kuat)'; desc = 'Fr₁ > 9.0: Sangat turbulen, erosi intensif. Perlu perlindungan dasar saluran ekstra.';
+    cssClass = 'jump-strong'; emoji = '⚠️';
+  }
+
+  return { y1: y1, y2: y2, Fr1: Fr1, Fr2: Fr2, Es1: Es1, Es2: Es2,
+           dE: dE, effLoss: effLoss, effRetained: effRetained,
+           Lj_peterka: Lj_peterka, Lj_silvester: Lj_silvester, y2_belanger: y2_belanger,
+           type: type, desc: desc, cssClass: cssClass, emoji: emoji };
+}
+
+/* ─────────────────────────────────────
+   GLOBAL STATE
+───────────────────────────────────── */
+var G = {};
+var _charts = {};
+
+function destroyChart(id) {
+  if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+}
+
+/* ─────────────────────────────────────
+   MAIN CALCULATE
+───────────────────────────────────── */
 function calculate() {
-  // Read inputs
-  const Q  = parseFloat(document.getElementById('inp_Q').value);
-  const b  = parseFloat(document.getElementById('inp_b').value);
-  const m  = parseFloat(document.getElementById('inp_m').value);
-  const n  = parseFloat(document.getElementById('inp_n').value);
-  const S0 = parseFloat(document.getElementById('inp_S0').value);
-  const g  = parseFloat(document.getElementById('inp_g').value);
-  const Cc = parseFloat(document.getElementById('inp_Cc').value);
-  const a  = parseFloat(document.getElementById('inp_a').value);
-  const dh = parseFloat(document.getElementById('inp_dh').value);
-  const Dz = parseFloat(document.getElementById('inp_Dz').value);
-  const b2 = parseFloat(document.getElementById('inp_b2').value);
+  var Q  = parseFloat(document.getElementById('inp_Q').value);
+  var b  = parseFloat(document.getElementById('inp_b').value);
+  var m  = parseFloat(document.getElementById('inp_m').value);
+  var n  = parseFloat(document.getElementById('inp_n').value);
+  var S0 = parseFloat(document.getElementById('inp_S0').value);
+  var g  = parseFloat(document.getElementById('inp_g').value);
+  var Cc = parseFloat(document.getElementById('inp_Cc').value);
+  var a  = parseFloat(document.getElementById('inp_a').value);
+  var dh = parseFloat(document.getElementById('inp_dh').value);
+  var Dz = parseFloat(document.getElementById('inp_Dz').value);
+  var b2 = parseFloat(document.getElementById('inp_b2').value);
 
   if ([Q,b,m,n,S0,g,Cc,a,dh,Dz,b2].some(isNaN)) return;
+  if (Q<=0 || b<=0 || n<=0 || S0<=0 || g<=0 || a<=0 || b2<=0) return;
 
-  /* ── Base ── */
-  const yn = findYn(Q, n, S0, b, m);
-  const yc = findYc(Q, g, b, m);
-  const Emin = Es(yc, Q, g, b, m);
-  const Fsmin = Fs(yc, Q, g, b, m);
-  const En   = Es(yn, Q, g, b, m);
-  const Fn   = Fs(yn, Q, g, b, m);
-  const Frn  = Fr(yn, Q, g, b, m);
-  const mild = yn > yc;
+  /* ── BASE ── */
+  var yn   = findYn(Q, n, S0, b, m);
+  var yc   = findYc(Q, g, b, m);
+  if (!yn || !yc) return;
+  var Emin  = hEs(yc, Q, g, b, m);
+  var Fsmin = hFs(yc, Q, g, b, m);
+  var En    = hEs(yn, Q, g, b, m);
+  var Fn    = hFs(yn, Q, g, b, m);
+  var Frn   = hFr(yn, Q, g, b, m);
+  var mild  = yn > yc;
 
-  // Alternate depth at E = En (supercritical branch)
-  const y_alt = findYfromEs(En, Q, g, b, m, yc, 'super');
-  // Conjugate to yn
-  const Fsn = Fs(yn, Q, g, b, m);
-  const y_j = findYfromFs(Fsn, Q, g, b, m, yc, 'super');
+  var y_alt = findEsY(En, Q, g, b, m, yc, 'super');
+  var y_j   = findFsY(Fn, Q, g, b, m, yc, 'super');
 
-  /* ── Scenario 1: Gate ── */
-  const y1_gate = Cc * a;
-  const A1_g = area(y1_gate, b, m);
-  const E1_g = Es(y1_gate, Q, g, b, m);
-  const y_sub_gate = findYfromEs(E1_g, Q, g, b, m, yc, 'sub');
-  const Fr1_g = Fr(y1_gate, Q, g, b, m);
-  const Fs1_g = Fs(y1_gate, Q, g, b, m);
-  const y2_conj_gate = findYfromFs(Fs1_g, Q, g, b, m, yc, 'sub');
-  const gate_terbendung = y1_gate < yc; // should always be true for valid gate opening
-  // gate position: y2 vs yn
-  const gate_jump = y2_conj_gate > yn ? 'hilir' : (y2_conj_gate < yn ? 'tenggelam' : 'tepat');
+  /* ── GATE Sc1 ── */
+  var y1g    = Cc * a;
+  var E1g    = hEs(y1g, Q, g, b, m);
+  var Fs1g   = hFs(y1g, Q, g, b, m);
+  var Fr1g   = hFr(y1g, Q, g, b, m);
+  var ysub_g = (y1g < yc) ? findEsY(E1g, Q, g, b, m, yc, 'sub') : yn;
+  var yconj_g= findFsY(Fs1g, Q, g, b, m, yc, 'sub');
+  var jump_g = jumpAnalysis(y1g, yconj_g, Q, g, b, m);
 
-  // Scenario 2: target hulu (Skenario 2 gate)
-  const y_target = yn + dh;
-  const E_target = Es(y_target, Q, g, b, m);
-  const y1_gate2 = findYfromEs(E_target, Q, g, b, m, yc, 'super');
-  const a_req = y1_gate2 ? y1_gate2 / Cc : null;
+  /* ── GATE Sc2 ── */
+  var ytgt   = yn + dh;
+  var Etgt   = hEs(ytgt, Q, g, b, m);
+  var y1g2   = findEsY(Etgt, Q, g, b, m, yc, 'super');
+  var a_req  = y1g2 ? y1g2 / Cc : null;
 
-  /* ── Scenario 2: Weir ── */
-  const E1_weir = En; // upstream energy = En before weir
-  const E2_weir = E1_weir - Dz;
-  const weir_blocked = E2_weir < Emin;
-  let y_sub_weir, y_kaki, E_hulu_weir, Fr_kaki, Fs_kaki, y_conj_weir;
-  if (weir_blocked) {
-    E_hulu_weir = Emin + Dz;
-    y_sub_weir  = findYfromEs(E_hulu_weir, Q, g, b, m, yc, 'sub');
-    y_kaki      = findYfromEs(E_hulu_weir, Q, g, b, m, yc, 'super');
-    Fr_kaki     = y_kaki ? Fr(y_kaki, Q, g, b, m) : null;
-    Fs_kaki     = y_kaki ? Fs(y_kaki, Q, g, b, m) : null;
-    y_conj_weir = Fs_kaki ? findYfromFs(Fs_kaki, Q, g, b, m, yc, 'sub') : null;
+  /* ── WEIR ── */
+  var E2w      = En - Dz;
+  var weir_blk = E2w < Emin;
+  var Ehw, ysub_w, ykaki, yconj_w;
+  if (weir_blk) {
+    Ehw    = Emin + Dz;
+    ysub_w = findEsY(Ehw, Q, g, b, m, yc, 'sub');
+    ykaki  = findEsY(Ehw, Q, g, b, m, yc, 'super');
   } else {
-    E_hulu_weir = E1_weir;
-    y_sub_weir  = yn;
-    y_kaki      = findYfromEs(E2_weir, Q, g, b, m, yc, 'super');
-    Fr_kaki     = y_kaki ? Fr(y_kaki, Q, g, b, m) : null;
-    Fs_kaki     = y_kaki ? Fs(y_kaki, Q, g, b, m) : null;
-    y_conj_weir = Fs_kaki ? findYfromFs(Fs_kaki, Q, g, b, m, yc, 'sub') : null;
+    Ehw    = En;
+    ysub_w = yn;
+    ykaki  = (E2w > 0) ? findEsY(E2w, Q, g, b, m, yc, 'super') : null;
   }
+  var Frkaki   = ykaki ? hFr(ykaki, Q, g, b, m) : null;
+  var Fskaki   = ykaki ? hFs(ykaki, Q, g, b, m) : null;
+  yconj_w      = Fskaki ? findFsY(Fskaki, Q, g, b, m, yc, 'sub') : null;
+  var jump_w   = jumpAnalysis(ykaki, yconj_w, Q, g, b, m);
 
-  /* ── Scenario 3: Constriction ── */
-  const yc2   = findYc(Q, g, b2, m);
-  const Emin2 = yc2 ? Es(yc2, Q, g, b2, m) : null;
-  const E1_con = En;
-  const con_blocked = Emin2 && E1_con < Emin2;
-  let y_sub_con, y_hilir_con, E_hulu_con, Fr_hilir_con, Fs_hilir_con, y_conj_con;
-  if (con_blocked) {
-    E_hulu_con  = Emin2;
-    y_sub_con   = findYfromEs(E_hulu_con, Q, g, b, m, yc, 'sub');
-    y_hilir_con = findYfromEs(E_hulu_con, Q, g, b, m, yc, 'super');
-    Fr_hilir_con= y_hilir_con ? Fr(y_hilir_con, Q, g, b, m) : null;
-    Fs_hilir_con= y_hilir_con ? Fs(y_hilir_con, Q, g, b, m) : null;
-    y_conj_con  = Fs_hilir_con ? findYfromFs(Fs_hilir_con, Q, g, b, m, yc, 'sub') : null;
+  /* ── CONSTRICTION ── */
+  var yc2    = findYc(Q, g, b2, m);
+  var Emin2  = yc2 ? hEs(yc2, Q, g, b2, m) : null;
+  var con_blk= !!(Emin2 && En < Emin2);
+  var Ehc, ysub_c, yhilir_c, yconj_c;
+  if (con_blk) {
+    Ehc      = Emin2;
+    ysub_c   = findEsY(Ehc, Q, g, b, m, yc, 'sub');
+    yhilir_c = findEsY(Ehc, Q, g, b, m, yc, 'super');
   } else {
-    E_hulu_con  = E1_con;
-    y_sub_con   = yn;
-    // leher: subkritis pada lebar b2
-    y_hilir_con = findYfromEs(E1_con, Q, g, b2, m, yc2, 'sub');
-    Fr_hilir_con= y_hilir_con ? Fr(y_hilir_con, Q, g, b2, m) : null;
-    Fs_hilir_con= null;
-    y_conj_con  = null;
+    Ehc      = En;
+    ysub_c   = yn;
+    yhilir_c = yc2 ? findEsY(En, Q, g, b2, m, yc2, 'sub') : null;
   }
+  var Frhilir_c = yhilir_c ? hFr(yhilir_c, Q, g, con_blk ? b : b2, m) : null;
+  var Fshilir_c = (yhilir_c && con_blk) ? hFs(yhilir_c, Q, g, b, m) : null;
+  yconj_c       = Fshilir_c ? findFsY(Fshilir_c, Q, g, b, m, yc, 'sub') : null;
+  var jump_c    = con_blk ? jumpAnalysis(yhilir_c, yconj_c, Q, g, b, m) : null;
 
-  /* ── Standard Step profiles ── */
-  const eps = 0.01;
-  const yn_hi = yn * (1 + eps), yn_lo = yn * (1 - eps);
+  /* ── STANDARD STEP PROFILES ── */
+  var eps    = 0.01;
+  var yn_hi  = yn * (1 + eps);
+  var yn_lo  = yn * (1 - eps);
 
-  // Gate M1 (upstream backwater)
-  let prof_gate_M1 = null, L_M1_gate = 0;
-  if (y_sub_gate && y_sub_gate > yn) {
-    prof_gate_M1 = standardStep(y_sub_gate, yn_hi, n, S0, Q, g, b, m, 60);
-    L_M1_gate = prof_gate_M1.length > 1 ? Math.abs(prof_gate_M1[prof_gate_M1.length-1].x) : 0;
-  }
+  function profLen(p) { return (p && p.length > 1) ? Math.abs(p[p.length-1].x) : 0; }
 
-  // Gate M3 (downstream supercritical → jump)
-  let prof_gate_M3 = null, L_M3_gate = 0;
-  if (y_j && y1_gate < yc) {
-    prof_gate_M3 = standardStep(y1_gate, y_j, n, S0, Q, g, b, m, 60);
-    L_M3_gate = prof_gate_M3.length > 1 ? Math.abs(prof_gate_M3[prof_gate_M3.length-1].x) : 0;
-  }
+  var prof_gM1 = (ysub_g && ysub_g > yn) ? standardStep(ysub_g, yn_hi, n, S0, Q, g, b, m, 80) : null;
+  var prof_gM3 = (y1g < yc && y_j)       ? standardStep(y1g,   y_j,  n, S0, Q, g, b, m, 80) : null;
+  var prof_wM1 = (ysub_w && ysub_w > yn) ? standardStep(ysub_w, yn_hi, n, S0, Q, g, b, m, 80) : null;
+  var prof_wM3 = (ykaki && ykaki < yc && y_j) ? standardStep(ykaki, y_j, n, S0, Q, g, b, m, 80) : null;
+  var prof_cM1 = (ysub_c && ysub_c > yn) ? standardStep(ysub_c, yn_hi, n, S0, Q, g, b, m, 80) : null;
+  var prof_M2  = standardStep(yc, yn_lo, n, S0, Q, g, b, m, 80);
 
-  // Weir M1
-  let prof_weir_M1 = null, L_M1_weir = 0;
-  if (y_sub_weir && y_sub_weir > yn) {
-    prof_weir_M1 = standardStep(y_sub_weir, yn_hi, n, S0, Q, g, b, m, 60);
-    L_M1_weir = prof_weir_M1.length > 1 ? Math.abs(prof_weir_M1[prof_weir_M1.length-1].x) : 0;
-  }
-  // Weir M3
-  let prof_weir_M3 = null, L_M3_weir = 0;
-  if (y_kaki && y_kaki < yc && y_j) {
-    prof_weir_M3 = standardStep(y_kaki, y_j, n, S0, Q, g, b, m, 60);
-    L_M3_weir = prof_weir_M3.length > 1 ? Math.abs(prof_weir_M3[prof_weir_M3.length-1].x) : 0;
-  }
-
-  // Constriction M1
-  let prof_con_M1 = null, L_M1_con = 0;
-  if (y_sub_con && y_sub_con > yn) {
-    prof_con_M1 = standardStep(y_sub_con, yn_hi, n, S0, Q, g, b, m, 60);
-    L_M1_con = prof_con_M1.length > 1 ? Math.abs(prof_con_M1[prof_con_M1.length-1].x) : 0;
-  }
-
-  // M2 (yc → yn from downstream free fall)
-  let prof_M2 = null, L_M2 = 0;
-  prof_M2 = standardStep(yc, yn_lo, n, S0, Q, g, b, m, 60);
-  L_M2 = prof_M2.length > 1 ? Math.abs(prof_M2[prof_M2.length-1].x) : 0;
-
-  /* ── Store ── */
+  /* ── STORE ── */
   G = {
-    Q, b, m, n, S0, g, Cc, a, dh, Dz, b2,
-    yn, yc, Emin, Fsmin, En, Fn, Frn, mild,
-    y_alt, y_j,
-    // gate
-    y1_gate, y_sub_gate, E1_g, Fr1_g, Fs1_g, y2_conj_gate, gate_jump,
-    y1_gate2, a_req,
-    // weir
-    weir_blocked, E2_weir, E_hulu_weir, y_sub_weir, y_kaki, Fr_kaki, Fs_kaki, y_conj_weir,
-    // constriction
-    yc2, Emin2, con_blocked, E_hulu_con, y_sub_con, y_hilir_con, Fr_hilir_con, y_conj_con,
-    // profiles
-    prof_gate_M1, L_M1_gate, prof_gate_M3, L_M3_gate,
-    prof_weir_M1, L_M1_weir, prof_weir_M3, L_M3_weir,
-    prof_con_M1, L_M1_con, prof_M2, L_M2,
-    eps
+    Q:Q, b:b, m:m, n:n, S0:S0, g:g, Cc:Cc, a:a, dh:dh, Dz:Dz, b2:b2,
+    yn:yn, yc:yc, Emin:Emin, Fsmin:Fsmin, En:En, Fn:Fn, Frn:Frn, mild:mild,
+    y_alt:y_alt, y_j:y_j,
+    y1g:y1g, E1g:E1g, Fs1g:Fs1g, Fr1g:Fr1g, ysub_g:ysub_g, yconj_g:yconj_g, jump_g:jump_g,
+    y1g2:y1g2, a_req:a_req,
+    E2w:E2w, weir_blk:weir_blk, Ehw:Ehw, ysub_w:ysub_w,
+    ykaki:ykaki, Frkaki:Frkaki, Fskaki:Fskaki, yconj_w:yconj_w, jump_w:jump_w,
+    yc2:yc2, Emin2:Emin2, con_blk:con_blk, Ehc:Ehc, ysub_c:ysub_c,
+    yhilir_c:yhilir_c, Frhilir_c:Frhilir_c, yconj_c:yconj_c, jump_c:jump_c,
+    prof_gM1:prof_gM1, prof_gM3:prof_gM3,
+    prof_wM1:prof_wM1, prof_wM3:prof_wM3,
+    prof_cM1:prof_cM1, prof_M2:prof_M2,
+    L_gM1:profLen(prof_gM1), L_gM3:profLen(prof_gM3),
+    L_wM1:profLen(prof_wM1), L_wM3:profLen(prof_wM3),
+    L_cM1:profLen(prof_cM1), L_M2:profLen(prof_M2)
   };
 
-  renderQuickPreview();
+  renderQuick();
   renderHasil();
+  renderLoncat();
   renderGrafik();
+  renderHdrStats();
 }
 
-/* ──────────────────────────────────────
+/* ─────────────────────────────────────
    FORMAT HELPERS
-──────────────────────────────────────── */
-const fmt = (v, d=4) => (v == null || isNaN(v)) ? '—' : Number(v).toFixed(d);
-const fmtFr = v => {
-  if (v == null) return '—';
-  const f = Number(v).toFixed(3);
-  const color = v < 1 ? 'result-good' : v > 1 ? 'result-bad' : '';
-  return `<span class="${color}">${f}</span>`;
-};
-
-/* ──────────────────────────────────────
-   QUICK PREVIEW (on Input tab)
-──────────────────────────────────────── */
-function renderQuickPreview() {
-  const { yn, yc, Emin, Frn, mild } = G;
-  const cards = document.getElementById('quick-cards');
-  const items = [
-    { label:'Kedalaman Normal yn', val:`${fmt(yn,4)} m`, color:'blue' },
-    { label:'Kedalaman Kritis yc', val:`${fmt(yc,4)} m`, color:'sky' },
-    { label:'Energi Min Emin',     val:`${fmt(Emin,4)} m`, color:'indigo' },
-    { label:'Jenis Saluran',       val: mild ? 'LANDAI (Mild)' : 'CURAM (Steep)', color: mild ? 'green':'red' }
-  ];
-  cards.innerHTML = items.map(it => `
-    <div class="bg-${it.color}-50 border border-${it.color}-200 rounded-xl p-3 text-center">
-      <div class="text-xs text-${it.color}-500 font-semibold mb-1">${it.label}</div>
-      <div class="text-lg font-bold text-${it.color}-700">${it.val}</div>
-    </div>`).join('');
-  document.getElementById('quick-preview').classList.remove('hidden');
+───────────────────────────────────── */
+function f(v, d) {
+  d = (d === undefined) ? 4 : d;
+  if (v === null || v === undefined || isNaN(v)) return '—';
+  return Number(v).toFixed(d);
+}
+function frColor(v) {
+  if (v === null || v === undefined || isNaN(v)) return '—';
+  var cls = v < 1 ? 'color:#15803d;font-weight:700' : v > 1 ? 'color:#b91c1c;font-weight:700' : 'color:#92400e;font-weight:700';
+  return '<span style="' + cls + '">' + v.toFixed(4) + '</span>';
+}
+function ir(label, val) {
+  return '<div class="info-row"><span class="ir-label">' + label + '</span><span class="ir-val">' + val + '</span></div>';
+}
+function bdg(cls, txt) {
+  return '<span class="bdg ' + cls + '">' + txt + '</span>';
 }
 
-/* ──────────────────────────────────────
+/* ─────────────────────────────────────
+   HEADER STATS
+───────────────────────────────────── */
+function renderHdrStats() {
+  var R = G;
+  document.getElementById('hdr-stats').innerHTML =
+    '<div style="text-align:center;padding:0 12px;border-right:1px solid rgba(255,255,255,.2)">' +
+      '<div style="font-size:1.1rem;font-weight:800;color:#fff">' + f(R.yn,3) + ' m</div>' +
+      '<div style="font-size:.65rem;color:#7dd3fc;font-weight:600">yn</div></div>' +
+    '<div style="text-align:center;padding:0 12px;border-right:1px solid rgba(255,255,255,.2)">' +
+      '<div style="font-size:1.1rem;font-weight:800;color:#fff">' + f(R.yc,3) + ' m</div>' +
+      '<div style="font-size:.65rem;color:#7dd3fc;font-weight:600">yc</div></div>' +
+    '<div style="text-align:center;padding:0 12px;border-right:1px solid rgba(255,255,255,.2)">' +
+      '<div style="font-size:1.1rem;font-weight:800;color:#fff">' + f(R.Frn,3) + '</div>' +
+      '<div style="font-size:.65rem;color:#7dd3fc;font-weight:600">Fr(yn)</div></div>' +
+    '<div style="text-align:center;padding:0 12px">' +
+      '<div style="font-size:.95rem;font-weight:800;color:' + (R.mild?'#4ade80':'#fca5a5') + '">' + (R.mild?'LANDAI':'CURAM') + '</div>' +
+      '<div style="font-size:.65rem;color:#7dd3fc;font-weight:600">Jenis</div></div>';
+}
+
+/* ─────────────────────────────────────
+   QUICK CARDS (tab input)
+───────────────────────────────────── */
+function renderQuick() {
+  var R = G;
+  var ITEMS = [
+    { lbl:'yn (Normal)',  val:f(R.yn,4)+' m',   bg:'linear-gradient(135deg,#1d4ed8,#0ea5e9)',   txt:'#fff' },
+    { lbl:'yc (Kritis)',  val:f(R.yc,4)+' m',   bg:'linear-gradient(135deg,#7c3aed,#a855f7)',   txt:'#fff' },
+    { lbl:'Emin',         val:f(R.Emin,4)+' m',  bg:'linear-gradient(135deg,#0f766e,#10b981)',   txt:'#fff' },
+    { lbl:'Fr (yn)',      val:f(R.Frn,4),        bg: R.Frn<1?'linear-gradient(135deg,#15803d,#22c55e)':'linear-gradient(135deg,#b91c1c,#ef4444)', txt:'#fff' },
+    { lbl:'Es (yn)',      val:f(R.En,4)+' m',    bg:'linear-gradient(135deg,#92400e,#f59e0b)',   txt:'#fff' },
+    { lbl:'Fs (yn)',      val:f(R.Fn,4)+' m³',   bg:'linear-gradient(135deg,#1e3a5f,#2563eb)',   txt:'#fff' },
+  ];
+  document.getElementById('quick-grid').innerHTML = ITEMS.map(function(it){
+    return '<div class="metric-card" style="background:' + it.bg + '">' +
+      '<div class="m-lbl" style="color:rgba(255,255,255,.8)">' + it.lbl + '</div>' +
+      '<div class="m-val" style="color:#fff">' + it.val + '</div>' +
+      '</div>';
+  }).join('');
+
+  var barMax = Math.max(R.yn, R.yc) * 1.5 || 1;
+  document.getElementById('quick-extra').innerHTML =
+    '<div style="font-size:.75rem;color:#64748b;margin-bottom:6px">Perbandingan yn vs yc</div>' +
+    '<div style="font-size:.7rem;color:#3b82f6;margin-bottom:2px">yn = ' + f(R.yn,3) + ' m</div>' +
+    '<div class="pbar" style="margin-bottom:6px"><div class="pbar-fill" style="width:' + Math.min(R.yn/barMax*100,100) + '%;background:linear-gradient(90deg,#1d4ed8,#0ea5e9)"></div></div>' +
+    '<div style="font-size:.7rem;color:#7c3aed;margin-bottom:2px">yc = ' + f(R.yc,3) + ' m</div>' +
+    '<div class="pbar" style="margin-bottom:12px"><div class="pbar-fill" style="width:' + Math.min(R.yc/barMax*100,100) + '%;background:linear-gradient(90deg,#7c3aed,#a855f7)"></div></div>' +
+    '<div style="font-size:.7rem;font-weight:600;padding:8px 12px;border-radius:8px;text-align:center;' +
+      (R.mild ? 'background:#dcfce7;color:#15803d' : 'background:#fee2e2;color:#b91c1c') + '">' +
+      (R.mild ? '🟢 Saluran LANDAI — Aliran Normal Subkritis (Fr < 1)' : '🔴 Saluran CURAM — Aliran Normal Superkritis (Fr > 1)') +
+    '</div>';
+}
+
+/* ─────────────────────────────────────
    HASIL TAB
-──────────────────────────────────────── */
+───────────────────────────────────── */
 function renderHasil() {
-  const R = G;
-  const mild_badge = R.mild
-    ? '<span class="badge badge-green">LANDAI — Aliran Normal SUBKRITIS</span>'
-    : '<span class="badge badge-red">CURAM — Aliran Normal SUPERKRITIS</span>';
+  var R = G;
 
-  /* ── Ringkasan Tabel ── */
-  const rows = [
-    ['y normal (yn)', fmt(R.yn), fmt(R.yn), fmt(R.yn), fmt(R.yn)],
-    ['y kritis (yc)', fmt(R.yc), fmt(R.yc), fmt(R.yc), fmt(R.yc)],
-    ['y subkritis hulu', fmt(R.yn), fmt(R.y_sub_gate), fmt(R.y_sub_weir), fmt(R.y_sub_con)],
-    ['y superkritis hilir', fmt(R.y_alt), fmt(R.y1_gate), fmt(R.y_kaki), fmt(R.y_hilir_con)],
-    ['Es (yn)', fmt(R.En), fmt(R.En), fmt(R.En), fmt(R.En)],
-    ['Es (yc)', fmt(R.Emin), fmt(R.Emin), fmt(R.Emin), fmt(R.Emin)],
-    ['Es (y subkritis)', fmt(R.En), fmt(R.E1_g), R.weir_blocked?fmt(R.E_hulu_weir):fmt(R.En), R.con_blocked?fmt(R.E_hulu_con):fmt(R.En)],
-    ['Fr (yn)', fmt(R.Frn,4), fmt(R.Frn,4), fmt(R.Frn,4), fmt(R.Frn,4)],
-    ['Fr (y subkritis)', fmt(R.Frn,4), fmt(Fr(R.y_sub_gate,R.Q,R.g,R.b,R.m),4), fmt(Fr(R.y_sub_weir,R.Q,R.g,R.b,R.m),4), fmt(Fr(R.y_sub_con,R.Q,R.g,R.b,R.m),4)],
-    ['Fr (y superkritis)', fmt(Fr(R.y_alt,R.Q,R.g,R.b,R.m),4), fmt(R.Fr1_g,4), fmt(R.Fr_kaki,4), fmt(R.Fr_hilir_con,4)],
-  ];
+  function tRow(cells) {
+    return '<tr>' + cells.map(function(c, i){
+      return '<t' + (i===0?'d style="text-align:left;color:#1e293b;font-weight:600"':'d') + '>' + c + '</td>';
+    }).join('') + '</tr>';
+  }
 
-  const tblRows = rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+  var sumRows = [
+    ['y normal (yn)',         f(R.yn),       f(R.yn),       f(R.yn),       f(R.yn)],
+    ['y kritis (yc)',         f(R.yc),       f(R.yc),       f(R.yc),       f(R.yc)],
+    ['y subkritis hulu',      f(R.yn),       f(R.ysub_g),   f(R.ysub_w),   f(R.ysub_c)],
+    ['y superkritis hilir',   f(R.y_alt),    f(R.y1g),      f(R.ykaki),    f(R.yhilir_c)],
+    ['y konjugat loncatan',   f(R.y_j),      f(R.yconj_g),  f(R.yconj_w),  f(R.yconj_c)],
+    ['Es (yn) [m]',           f(R.En),       f(R.En),       f(R.En),       f(R.En)],
+    ['Emin [m]',              f(R.Emin),     f(R.Emin),     f(R.Emin),     f(R.Emin)],
+    ['Es y subkritis [m]',    f(R.En),       f(R.E1g),      R.weir_blk?f(R.Ehw):f(R.En), R.con_blk?f(R.Ehc):f(R.En)],
+    ['ΔEs loncatan [m]',      '—',           f(R.jump_g?R.jump_g.dE:null),  f(R.jump_w?R.jump_w.dE:null), f(R.jump_c?R.jump_c.dE:null)],
+    ['Fr (yn)',                f(R.Frn,4),    f(R.Frn,4),    f(R.Frn,4),    f(R.Frn,4)],
+    ['Fr (hilir bangunan)',    '—',           f(R.Fr1g,4),   f(R.Frkaki,4), f(R.Frhilir_c,4)],
+    ['L remous M1 [m]',       '—',           f(R.L_gM1,1),  f(R.L_wM1,1),  f(R.L_cM1,1)],
+    ['L loncatan M3 [m]',     '—',           f(R.L_gM3,1),  f(R.L_wM3,1),  '—'],
+    ['L kurva M2 [m]',        f(R.L_M2,1),   f(R.L_M2,1),   f(R.L_M2,1),   f(R.L_M2,1)],
+  ].map(tRow).join('');
 
-  /* ── Gate details ── */
-  const gateStatus = R.y_sub_gate && R.y_sub_gate > R.yn
-    ? `<span class="badge badge-amber">PEMBENDUNGAN ↑${fmt(R.y_sub_gate - R.yn,3)} m di atas yn</span>`
-    : `<span class="badge badge-green">Tidak terbendung</span>`;
-  const gateJump = R.gate_jump === 'hilir'
-    ? `<span class="badge badge-blue">Loncatan di HILIR (M3 → y_j → yn)</span>`
-    : `<span class="badge badge-green">Loncatan tenggelam</span>`;
+  document.getElementById('hasil-content').innerHTML =
+  '<div style="display:flex;flex-direction:column;gap:16px">' +
 
-  /* ── Weir details ── */
-  const weirStatus = R.weir_blocked
-    ? `<span class="badge badge-red">TERBENDUNG — E₂ (${fmt(R.E2_weir,4)} m) &lt; Emin (${fmt(R.Emin,4)} m)</span>`
-    : `<span class="badge badge-green">LOLOS — E₂ (${fmt(R.E2_weir,4)} m) ≥ Emin (${fmt(R.Emin,4)} m)</span>`;
+  /* A. Kondisi Dasar */
+  '<div class="card p-5">' +
+    '<div class="stitle" style="color:#1d4ed8;border-color:#dbeafe">A. Kondisi Dasar Saluran</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px">' +
+      [
+        {l:'yn',v:f(R.yn)+' m',bg:'linear-gradient(135deg,#1d4ed8,#0ea5e9)'},
+        {l:'yc',v:f(R.yc)+' m',bg:'linear-gradient(135deg,#7c3aed,#a855f7)'},
+        {l:'Emin',v:f(R.Emin)+' m',bg:'linear-gradient(135deg,#0f766e,#10b981)'},
+        {l:'Fr(yn)',v:f(R.Frn,4),bg:R.Frn<1?'linear-gradient(135deg,#15803d,#22c55e)':'linear-gradient(135deg,#b91c1c,#ef4444)'},
+        {l:'Es(yn)',v:f(R.En)+' m',bg:'linear-gradient(135deg,#92400e,#f59e0b)'},
+        {l:'Fs(yn)',v:f(R.Fn)+' m³',bg:'linear-gradient(135deg,#1e3a5f,#2563eb)'},
+      ].map(function(c){
+        return '<div class="metric-card" style="background:'+c.bg+'">' +
+          '<div class="m-lbl" style="color:rgba(255,255,255,.8)">'+c.l+'</div>' +
+          '<div class="m-val" style="color:#fff;font-size:1.1rem">'+c.v+'</div></div>';
+      }).join('') +
+    '</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">' +
+      bdg(R.mild?'bdg-green':'bdg-red', R.mild?'🟢 LANDAI — Subkritis':'🔴 CURAM — Superkritis') +
+      bdg('bdg-blue','y_alt = '+f(R.y_alt)+' m') +
+      bdg('bdg-purple','y_j = '+f(R.y_j)+' m') +
+      bdg('bdg-amber','Fsmin = '+f(R.Fsmin)+' m³') +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">' +
+      ir('A(yn)',f(hArea(R.yn,R.b,R.m),4)+' m²') +
+      ir('P(yn)',f(hPerim(R.yn,R.b,R.m),4)+' m') +
+      ir('R(yn)',f(hHydR(R.yn,R.b,R.m),4)+' m') +
+      ir('V(yn)',f(hVel(R.yn,R.Q,R.b,R.m),4)+' m/s') +
+    '</div>' +
+  '</div>' +
 
-  /* ── Constriction details ── */
-  const conStatus = R.con_blocked
-    ? `<span class="badge badge-red">TERBENDUNG — E₁ (${fmt(R.En,4)} m) &lt; Emin₂ (${fmt(R.Emin2,4)} m)</span>`
-    : `<span class="badge badge-green">LOLOS — E₁ (${fmt(R.En,4)} m) ≥ Emin₂ (${fmt(R.Emin2,4)} m)</span>`;
+  /* B. Ringkasan Tabel */
+  '<div class="card p-5">' +
+    '<div class="stitle" style="color:#0e7490;border-color:#a5f3fc">B. Tabel Ringkasan — Empat Kedalaman Acuan</div>' +
+    '<div style="overflow-x:auto"><table class="htable">' +
+      '<thead><tr><th>Besaran</th><th>Kondisi Dasar</th><th>🚪 Pintu Air</th><th>🪨 Bendung</th><th>↔️ Penyempitan</th></tr></thead>' +
+      '<tbody>' + sumRows + '</tbody>' +
+    '</table></div>' +
+  '</div>' +
 
-  document.getElementById('hasil-content').innerHTML = `
-  <div class="space-y-4">
+  /* C. Gate */
+  '<div class="card p-5">' +
+    '<div class="stitle" style="color:#0369a1;border-color:#bae6fd">C. Skenario Pintu Air — Sluice Gate</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+      '<div>' +
+        '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:8px">Skenario 1 — Bukaan a = '+f(R.a,3)+' m, Cc = '+R.Cc+'</div>' +
+        ir('y₁ hilir pintu (super)', f(R.y1g)+' m') +
+        ir('Fr₁', frColor(R.Fr1g)) +
+        ir('Es di y₁', f(R.E1g)+' m') +
+        ir('y_sub hulu (sub)', f(R.ysub_g)+' m') +
+        ir('Kenaikan muka air hulu', f(R.ysub_g&&R.yn?R.ysub_g-R.yn:null,3)+' m') +
+        ir('y₂ konjugat loncatan', f(R.yconj_g)+' m') +
+        ir('L remous M1', f(R.L_gM1,1)+' m') +
+        ir('L ke awal loncatan M3', f(R.L_gM3,1)+' m') +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' +
+          bdg(R.ysub_g&&R.ysub_g>R.yn?'bdg-amber':'bdg-green', R.ysub_g&&R.ysub_g>R.yn?'⬆ Terbendung +'+f(R.ysub_g-R.yn,3)+' m':'Tidak terbendung') +
+          bdg(R.yconj_g&&R.yconj_g>R.yn?'bdg-blue':'bdg-green', R.yconj_g&&R.yconj_g>R.yn?'Loncatan di hilir':'Loncatan tenggelam') +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:8px">Skenario 2 — Target Δh = '+f(R.dh,3)+' m</div>' +
+        ir('y_target hulu', f(R.yn+R.dh,4)+' m') +
+        ir('y₁ super yang dibutuhkan', f(R.y1g2,4)+' m') +
+        ir('Bukaan pintu perlu a', '<span style="color:#1d4ed8;font-weight:800">'+f(R.a_req,4)+' m</span>') +
+      '</div>' +
+    '</div>' +
+  '</div>' +
 
-    <!-- Kondisi Dasar -->
-    <div class="card p-5">
-      <div class="section-title">A. Kondisi Dasar Saluran</div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-        <div class="bg-blue-50 rounded-xl p-3 text-center">
-          <div class="text-xs text-blue-500 font-semibold">yn</div>
-          <div class="text-xl font-bold text-blue-700">${fmt(R.yn)} m</div>
-        </div>
-        <div class="bg-sky-50 rounded-xl p-3 text-center">
-          <div class="text-xs text-sky-500 font-semibold">yc</div>
-          <div class="text-xl font-bold text-sky-700">${fmt(R.yc)} m</div>
-        </div>
-        <div class="bg-indigo-50 rounded-xl p-3 text-center">
-          <div class="text-xs text-indigo-500 font-semibold">Emin</div>
-          <div class="text-xl font-bold text-indigo-700">${fmt(R.Emin)} m</div>
-        </div>
-        <div class="bg-violet-50 rounded-xl p-3 text-center">
-          <div class="text-xs text-violet-500 font-semibold">Fr (yn)</div>
-          <div class="text-xl font-bold text-violet-700">${fmt(R.Frn,4)}</div>
-        </div>
-      </div>
-      <div class="mb-2">${mild_badge}</div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm mt-3">
-        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">Es(yn) =</span> <b>${fmt(R.En)} m</b></div>
-        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">Fs(yn) =</span> <b>${fmt(R.Fn)} m³</b></div>
-        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">y_alt =</span> <b>${fmt(R.y_alt)} m</b></div>
-        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">y_j (konjugat yn) =</span> <b>${fmt(R.y_j)} m</b></div>
-        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">Fsmin =</span> <b>${fmt(R.Fsmin)} m³</b></div>
-      </div>
-    </div>
+  /* D. Weir */
+  '<div class="card p-5">' +
+    '<div class="stitle" style="color:#7c3aed;border-color:#ddd6fe">D. Skenario Bendung — Δz = '+f(R.Dz,3)+' m</div>' +
+    '<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px">' +
+      bdg(R.weir_blk?'bdg-red':'bdg-green', R.weir_blk?'⛔ TERBENDUNG — E₂='+f(R.E2w,4)+' m < Emin='+f(R.Emin,4)+' m':'✅ LOLOS — E₂='+f(R.E2w,4)+' m ≥ Emin='+f(R.Emin,4)+' m') +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px">' +
+      ir('E₁ = Es(yn)', f(R.En)+' m') +
+      ir('E₂ = E₁ − Δz', f(R.E2w)+' m') +
+      ir('Emin', f(R.Emin)+' m') +
+      ir('E_hulu baru', f(R.Ehw)+' m') +
+      ir('y_sub hulu', f(R.ysub_w)+' m') +
+      ir('Kenaikan y hulu', f(R.ysub_w&&R.yn?R.ysub_w-R.yn:null,3)+' m') +
+      ir('y kaki (super)', f(R.ykaki)+' m') +
+      ir('Fr kaki', frColor(R.Frkaki)) +
+      ir('y konjugat', f(R.yconj_w)+' m') +
+      ir('L remous M1', f(R.L_wM1,1)+' m') +
+      ir('L ke loncatan M3', f(R.L_wM3,1)+' m') +
+    '</div>' +
+  '</div>' +
 
-    <!-- Ringkasan Tabel -->
-    <div class="card p-5">
-      <div class="section-title">B. Tabel Ringkasan — Empat Kedalaman Acuan</div>
-      <div class="overflow-x-auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Besaran</th>
-              <th>Kondisi Dasar</th>
-              <th>Pintu Air</th>
-              <th>Bendung</th>
-              <th>Penyempitan</th>
-            </tr>
-          </thead>
-          <tbody>${tblRows}</tbody>
-        </table>
-      </div>
-    </div>
+  /* E. Constriction */
+  '<div class="card p-5">' +
+    '<div class="stitle" style="color:#15803d;border-color:#bbf7d0">E. Skenario Penyempitan — b₂ = '+f(R.b2,3)+' m</div>' +
+    '<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px">' +
+      bdg(R.con_blk?'bdg-red':'bdg-green', R.con_blk?'⛔ TERBENDUNG — E₁='+f(R.En,4)+' m < Emin₂='+f(R.Emin2,4)+' m':'✅ LOLOS — E₁='+f(R.En,4)+' m ≥ Emin₂='+f(R.Emin2||0,4)+' m') +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px">' +
+      ir('yc₂ di leher', f(R.yc2)+' m') +
+      ir('Emin₂', f(R.Emin2)+' m') +
+      ir('y_sub hulu', f(R.ysub_c)+' m') +
+      ir('Kenaikan y hulu', f(R.ysub_c&&R.yn?R.ysub_c-R.yn:null,3)+' m') +
+      ir('y hilir (super)', f(R.yhilir_c)+' m') +
+      ir('Fr hilir', frColor(R.Frhilir_c)) +
+      ir('y konjugat', f(R.yconj_c)+' m') +
+      ir('L remous M1', f(R.L_cM1,1)+' m') +
+      ir('L kurva M2', f(R.L_M2,1)+' m') +
+    '</div>' +
+  '</div>' +
 
-    <!-- Gate Scenario -->
-    <div class="card p-5">
-      <div class="section-title">C. Skenario Pintu Air (Sluice Gate)</div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <p class="text-sm font-bold text-sky-700 mb-2">Skenario 1 — Bukaan a = ${fmt(R.a,3)} m (Cc = ${R.Cc})</p>
-          <div class="space-y-1 text-sm">
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y₁ hilir pintu (superkritis)</span><b>${fmt(R.y1_gate)} m</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>E₁ (energi spesifik)</span><b>${fmt(R.E1_g)} m</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>Fr₁</span><b>${fmt(R.Fr1_g,4)}</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y_sub hulu (subkritis)</span><b>${fmt(R.y_sub_gate)} m</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>Kenaikan muka air hulu</span><b>${fmt(R.y_sub_gate && R.yn ? R.y_sub_gate - R.yn : null)} m</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y₂ konjugat dari y₁</span><b>${fmt(R.y2_conj_gate)} m</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>L remous M1 (hulu)</span><b>${fmt(R.L_M1_gate,1)} m</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>L ke loncatan M3 (hilir)</span><b>${fmt(R.L_M3_gate,1)} m</b></div>
-          </div>
-          <div class="mt-2 space-y-1">${gateStatus}<br/>${gateJump}</div>
-        </div>
-        <div>
-          <p class="text-sm font-bold text-sky-700 mb-2">Skenario 2 — Target kenaikan Δh = ${fmt(R.dh,3)} m</p>
-          <div class="space-y-1 text-sm">
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y_target hulu</span><b>${fmt(R.yn + R.dh)} m</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y₁ superkritis yang cocok</span><b>${fmt(R.y1_gate2)} m</b></div>
-            <div class="flex justify-between bg-slate-50 rounded p-2"><span>Bukaan pintu diperlukan a</span><b class="text-blue-700">${fmt(R.a_req,4)} m</b></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Weir Scenario -->
-    <div class="card p-5">
-      <div class="section-title">D. Skenario Bendung / Ambang (Δz = ${fmt(R.Dz,3)} m)</div>
-      <div class="mb-3">${weirStatus}</div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>E₁ = Es(yn)</span><b>${fmt(R.En)} m</b></div>
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>E₂ = E₁ − Δz</span><b>${fmt(R.E2_weir)} m</b></div>
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>Emin</span><b>${fmt(R.Emin)} m</b></div>
-        ${R.weir_blocked ? `
-        <div class="flex justify-between bg-orange-50 rounded p-2"><span>E_hulu baru</span><b>${fmt(R.E_hulu_weir)} m</b></div>
-        <div class="flex justify-between bg-orange-50 rounded p-2"><span>y_sub hulu baru</span><b>${fmt(R.y_sub_weir)} m</b></div>
-        <div class="flex justify-between bg-orange-50 rounded p-2"><span>Kenaikan y hulu</span><b>${fmt(R.y_sub_weir && R.yn ? R.y_sub_weir - R.yn : null)} m</b></div>
-        <div class="flex justify-between bg-red-50 rounded p-2"><span>y kaki (superkritis)</span><b>${fmt(R.y_kaki)} m</b></div>
-        <div class="flex justify-between bg-red-50 rounded p-2"><span>Fr kaki</span><b>${fmt(R.Fr_kaki,4)}</b></div>
-        <div class="flex justify-between bg-red-50 rounded p-2"><span>y konjugat kaki</span><b>${fmt(R.y_conj_weir)} m</b></div>
-        ` : `
-        <div class="flex justify-between bg-green-50 rounded p-2"><span>y di atas ambang</span><b>${fmt(R.y_kaki)} m</b></div>
-        <div class="flex justify-between bg-green-50 rounded p-2"><span>Aliran melewati normal</span><b>—</b></div>
-        `}
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>L remous M1</span><b>${fmt(R.L_M1_weir,1)} m</b></div>
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>L ke loncatan M3</span><b>${fmt(R.L_M3_weir,1)} m</b></div>
-      </div>
-    </div>
-
-    <!-- Constriction Scenario -->
-    <div class="card p-5">
-      <div class="section-title">E. Skenario Penyempitan / Pelebaran (b₂ = ${fmt(R.b2,3)} m)</div>
-      <div class="mb-3">${conStatus}</div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>yc₂ di leher</span><b>${fmt(R.yc2)} m</b></div>
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>Emin₂ di leher</span><b>${fmt(R.Emin2)} m</b></div>
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>E₁ = Es(yn)</span><b>${fmt(R.En)} m</b></div>
-        ${R.con_blocked ? `
-        <div class="flex justify-between bg-orange-50 rounded p-2"><span>E_hulu baru (=Emin₂)</span><b>${fmt(R.E_hulu_con)} m</b></div>
-        <div class="flex justify-between bg-orange-50 rounded p-2"><span>y_sub hulu baru</span><b>${fmt(R.y_sub_con)} m</b></div>
-        <div class="flex justify-between bg-orange-50 rounded p-2"><span>Kenaikan y hulu</span><b>${fmt(R.y_sub_con && R.yn ? R.y_sub_con - R.yn : null)} m</b></div>
-        <div class="flex justify-between bg-red-50 rounded p-2"><span>y hilir (superkritis)</span><b>${fmt(R.y_hilir_con)} m</b></div>
-        <div class="flex justify-between bg-red-50 rounded p-2"><span>Fr hilir</span><b>${fmt(R.Fr_hilir_con,4)}</b></div>
-        <div class="flex justify-between bg-red-50 rounded p-2"><span>y konjugat hilir</span><b>${fmt(R.y_conj_con)} m</b></div>
-        ` : `
-        <div class="flex justify-between bg-green-50 rounded p-2"><span>y di leher (subkritis)</span><b>${fmt(R.y_hilir_con)} m</b></div>
-        `}
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>L remous M1</span><b>${fmt(R.L_M1_con,1)} m</b></div>
-        <div class="flex justify-between bg-slate-50 rounded p-2"><span>L kurva M2</span><b>${fmt(R.L_M2,1)} m</b></div>
-      </div>
-    </div>
-
-  </div>`;
+  '</div>';/* end space-y */
 }
 
-/* ──────────────────────────────────────
-   GRAFIK TAB
-──────────────────────────────────────── */
-function renderGrafik() {
-  document.getElementById('grafik-content').innerHTML = `
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="card p-4">
-        <h3 class="font-bold text-blue-800 mb-3 text-sm">📉 Kurva Energi Spesifik (E–y)</h3>
-        <canvas id="chartEy"></canvas>
-      </div>
-      <div class="card p-4">
-        <h3 class="font-bold text-blue-800 mb-3 text-sm">🌊 Profil Muka Air — Standard Step</h3>
-        <canvas id="chartProfile"></canvas>
-      </div>
-    </div>
-    <div class="card p-4 mt-4">
-      <h3 class="font-bold text-blue-800 mb-3 text-sm">📊 Profil Gabungan Semua Skenario</h3>
-      <canvas id="chartAll" style="max-height:320px;"></canvas>
-    </div>`;
+/* ─────────────────────────────────────
+   LONCAT HIDROLIK TAB
+───────────────────────────────────── */
+function renderLoncat() {
+  var R = G;
 
-  buildEyChart();
-  buildProfileChart();
-  buildAllChart();
+  function jumpCard(title, j, yn) {
+    if (!j) {
+      return '<div class="card p-5"><div class="stitle">'+title+'</div>' +
+        '<div style="color:#94a3b8;font-size:.85rem;padding:20px 0;text-align:center">Tidak ada loncatan hidrolik pada skenario ini.</div></div>';
+    }
+
+    var pos = (j.y2 && yn)
+      ? (j.y2 > yn ? bdg('bdg-blue','Loncatan di HILIR bangunan') : bdg('bdg-green','Loncatan TENGGELAM'))
+      : '—';
+
+    var pct = isNaN(j.effLoss) ? 0 : Math.min(Math.max(j.effLoss, 0), 100);
+
+    return '<div class="card p-5">' +
+      '<div class="stitle">'+title+'</div>' +
+      /* Type Box */
+      '<div class="jump-box ' + j.cssClass + '" style="margin-bottom:16px">' +
+        '<div style="font-size:1rem;font-weight:800;margin-bottom:4px">' + j.emoji + ' ' + j.type + '</div>' +
+        '<div style="font-size:.78rem;line-height:1.5">' + j.desc + '</div>' +
+      '</div>' +
+      /* 3 metric mini */
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">' +
+        '<div class="card-blue" style="border-radius:10px;padding:10px;text-align:center">' +
+          '<div style="font-size:.65rem;font-weight:700;color:#1e40af;text-transform:uppercase;margin-bottom:2px">y₁ sebelum</div>' +
+          '<div style="font-size:1.1rem;font-weight:800;color:#1d4ed8">' + f(j.y1) + '</div>' +
+          '<div style="font-size:.65rem;color:#64748b">m</div>' +
+        '</div>' +
+        '<div class="card-green" style="border-radius:10px;padding:10px;text-align:center">' +
+          '<div style="font-size:.65rem;font-weight:700;color:#15803d;text-transform:uppercase;margin-bottom:2px">y₂ sesudah</div>' +
+          '<div style="font-size:1.1rem;font-weight:800;color:#15803d">' + f(j.y2) + '</div>' +
+          '<div style="font-size:.65rem;color:#64748b">m</div>' +
+        '</div>' +
+        '<div class="card-amber" style="border-radius:10px;padding:10px;text-align:center">' +
+          '<div style="font-size:.65rem;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:2px">Δy = y₂−y₁</div>' +
+          '<div style="font-size:1.1rem;font-weight:800;color:#92400e">' + f(j.y2&&j.y1?j.y2-j.y1:null,4) + '</div>' +
+          '<div style="font-size:.65rem;color:#64748b">m</div>' +
+        '</div>' +
+      '</div>' +
+      /* Data rows */
+      ir('Fr₁ (sebelum loncatan)', frColor(j.Fr1)) +
+      ir('Fr₂ (sesudah loncatan)', frColor(j.Fr2)) +
+      ir('Es₁', f(j.Es1)+' m') +
+      ir('Es₂', f(j.Es2)+' m') +
+      ir('ΔE kehilangan energi', '<span style="color:#b91c1c;font-weight:700">'+f(j.dE)+' m</span>') +
+      ir('Efisiensi kehilangan', '<span style="color:#d97706;font-weight:700">'+f(j.effLoss,2)+' %</span>') +
+      ir('Energi tersisa', '<span style="color:#15803d;font-weight:700">'+f(j.effRetained,2)+' %</span>') +
+      ir('Panjang (Peterka: 6·Δy)', '<span style="color:#1d4ed8;font-weight:700">'+f(j.Lj_peterka,2)+' m</span>') +
+      ir('Panjang (Silvester)', '<span style="color:#0e7490;font-weight:700">'+f(j.Lj_silvester,2)+' m</span>') +
+      ir('y₂ Belanger (persegi ref)', f(j.y2_belanger,4)+' m') +
+      ir('Posisi relatif thd yn', pos) +
+      /* Energy loss bar */
+      '<div style="font-size:.72rem;color:#64748b;margin-top:10px;margin-bottom:4px">Kehilangan Energi: '+f(j.effLoss,1)+' %</div>' +
+      '<div class="pbar"><div class="pbar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,#ef4444,#f97316)"></div></div>' +
+      /* SVG diagram */
+      makeSVG(j.y1, j.y2, j.Lj_peterka) +
+    '</div>';
+  }
+
+  /* Tabel Fs ringkasan */
+  function fsRow(label, y, useB, b_val) {
+    if (!y) return '';
+    var bv = b_val || R.b;
+    var mv = R.m;
+    return '<tr>' +
+      '<td style="text-align:left;font-weight:600;color:#1e293b">' + label + '</td>' +
+      '<td>' + f(y,4) + '</td>' +
+      '<td>' + f(hFs(y,R.Q,R.g,bv,mv),4) + '</td>' +
+      '<td>' + f(hEs(y,R.Q,R.g,bv,mv),4) + '</td>' +
+      '<td>' + frColor(hFr(y,R.Q,R.g,bv,mv)) + '</td>' +
+    '</tr>';
+  }
+
+  document.getElementById('loncat-content').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:16px">' +
+
+    /* 3 jump cards */
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">' +
+      jumpCard('🚪 Loncatan Hidrolik — Pintu Air', R.jump_g, R.yn) +
+      jumpCard('🪨 Loncatan Hidrolik — Bendung', R.jump_w, R.yn) +
+      jumpCard('↔️ Loncatan Hidrolik — Penyempitan', R.jump_c, R.yn) +
+    '</div>' +
+
+    /* Tabel Fs */
+    '<div class="card p-5">' +
+      '<div class="stitle" style="color:#92400e;border-color:#fde68a">⚖️ Tabel Gaya Spesifik &amp; Momentum</div>' +
+      '<div style="overflow-x:auto"><table class="htable">' +
+        '<thead><tr><th>Kondisi / Kedalaman</th><th>y (m)</th><th>Fs (m³)</th><th>Es (m)</th><th>Fr</th></tr></thead>' +
+        '<tbody>' +
+          fsRow('yn (kedalaman normal)', R.yn) +
+          fsRow('yc (kedalaman kritis)', R.yc) +
+          fsRow('y_alt (superkritis di Es=En)', R.y_alt) +
+          fsRow('y_j (konjugat dari yn)', R.y_j) +
+          fsRow('y₁ Pintu (hilir gate)', R.y1g) +
+          fsRow('y₂ konjugat Pintu', R.yconj_g) +
+          fsRow('y kaki Bendung', R.ykaki) +
+          fsRow('y konjugat Bendung', R.yconj_w) +
+          fsRow('y hilir Penyempitan', R.yhilir_c) +
+          fsRow('y konjugat Penyempitan', R.yconj_c) +
+        '</tbody>' +
+      '</table></div>' +
+      '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:.75rem;color:#78350f;margin-top:12px">' +
+        '💡 <b>Prinsip Momentum:</b> Loncatan terjadi saat Fs(y₁) = Fs(y₂). ' +
+        'Kehilangan energi ΔE = Es(y₁) − Es(y₂) adalah energi yang diubah menjadi turbulensi dan panas.' +
+      '</div>' +
+    '</div>' +
+
+    /* Chart Fs */
+    '<div class="card p-5">' +
+      '<div class="stitle" style="color:#7c3aed;border-color:#ddd6fe">📉 Kurva Gaya Spesifik Fs–y dan Energi Spesifik Es–y</div>' +
+      '<canvas id="chartFsEs" style="max-height:360px"></canvas>' +
+    '</div>' +
+
+    '</div>';
+
+  buildFsEsChart();
 }
 
-function buildEyChart() {
-  const R = G;
-  const yMax = Math.min(R.yn * 2.5, 4);
-  const pts = 120;
-  const ys = Array.from({length: pts}, (_,i) => 0.02 + (yMax - 0.02) * i / (pts - 1));
+/* ── SVG schematic ── */
+function makeSVG(y1, y2, Lj) {
+  if (!y1 || !y2 || y1 >= y2 || isNaN(y1) || isNaN(y2)) return '';
+  var W=340, H=110, pad=24;
+  var ymax = y2 * 1.35;
+  function sc(h){ return (H-20) * h / ymax; }
+  var x1=pad, xj=pad + (W-2*pad)*0.32, xjE=xj + Math.min((W-2*pad)*0.4, 90), x2=W-pad;
+  var top1=H-sc(y1), top2=H-sc(y2);
+  /* wave path */
+  var steps=10, wx=(xjE-xj)/steps, wave='M'+xj+' '+top1;
+  for(var i=0;i<steps;i++){
+    var px=xj+(i+1)*wx;
+    var py=top1+(top2-top1)*(i+1)/steps;
+    var amp=(top2-top1)*0.12*(i%2===0?1:-1);
+    wave+=' Q'+(xj+(i+0.5)*wx)+','+(py+amp)+' '+px+','+py;
+  }
+  return '<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="margin-top:12px;background:#f0f9ff;border-radius:12px;border:1px solid #bae6fd">' +
+    '<line x1="'+pad+'" y1="'+(H-2)+'" x2="'+(W-pad)+'" y2="'+(H-2)+'" stroke="#94a3b8" stroke-width="2.5"/>' +
+    '<text x="'+(W/2)+'" y="'+(H)+'" fill="#94a3b8" font-size="8" text-anchor="middle">Dasar saluran</text>' +
+    /* upstream */
+    '<rect x="'+x1+'" y="'+top1+'" width="'+(xj-x1)+'" height="'+(H-2-top1)+'" fill="rgba(59,130,246,.18)" stroke="#3b82f6" stroke-width="1.5" rx="2"/>' +
+    '<text x="'+((x1+xj)/2)+'" y="'+(top1-5)+'" fill="#1d4ed8" font-size="9" font-weight="bold" text-anchor="middle">y₁='+f(y1,3)+' m</text>' +
+    /* wave */
+    '<path d="'+wave+'" fill="none" stroke="#0ea5e9" stroke-width="2.5"/>' +
+    /* downstream */
+    '<rect x="'+xjE+'" y="'+top2+'" width="'+(x2-xjE)+'" height="'+(H-2-top2)+'" fill="rgba(34,197,94,.18)" stroke="#22c55e" stroke-width="1.5" rx="2"/>' +
+    '<text x="'+((xjE+x2)/2)+'" y="'+(top2-5)+'" fill="#15803d" font-size="9" font-weight="bold" text-anchor="middle">y₂='+f(y2,3)+' m</text>' +
+    /* Lj arrow */
+    '<defs><marker id="ar" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#f59e0b"/></marker></defs>' +
+    '<line x1="'+xj+'" y1="'+(H-12)+'" x2="'+xjE+'" y2="'+(H-12)+'" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#ar)"/>' +
+    '<text x="'+((xj+xjE)/2)+'" y="'+(H-14)+'" fill="#92400e" font-size="8" font-weight="bold" text-anchor="middle">L_j≈'+f(Lj,1)+' m</text>' +
+    /* label */
+    '<text x="'+((xj+xjE)/2)+'" y="14" fill="#0369a1" font-size="8" text-anchor="middle">Zona Loncatan Hidrolik</text>' +
+  '</svg>';
+}
 
-  const esVals = ys.map(y => Es(y, R.Q, R.g, R.b, R.m));
+/* ─────────────────────────────────────
+   Fs–Es CHART
+───────────────────────────────────── */
+function buildFsEsChart() {
+  destroyChart('FsEs');
+  var R = G;
+  var ym = Math.min(R.yn * 2.5, 6);
+  var pts = [];
+  var n = 120;
+  for (var i = 0; i < n; i++) {
+    var y = 0.02 + (ym - 0.02) * i / (n - 1);
+    pts.push({ y: y, fs: hFs(y, R.Q, R.g, R.b, R.m), es: hEs(y, R.Q, R.g, R.b, R.m) });
+  }
+  var fsMax = hFs(R.yn, R.Q, R.g, R.b, R.m) * 3;
+  var filtered = pts.filter(function(p){ return p.fs > 0 && p.fs < fsMax; });
 
-  // Limit to sensible range
-  const eMax = R.En * 2.5;
-  const filtered = ys.map((y,i) => ({y, e: esVals[i]})).filter(p => p.e < eMax && p.e > 0);
+  /* vertical line helper */
+  function vLine(y_val, label, color) {
+    if (!y_val || isNaN(y_val)) return null;
+    return {
+      label: label + '=' + f(y_val, 3) + ' m',
+      data: [{ x: hFs(y_val, R.Q, R.g, R.b, R.m), y: 0 }, { x: hFs(y_val, R.Q, R.g, R.b, R.m), y: ym }],
+      type: 'line', borderColor: color, borderWidth: 1.5, borderDash: [5, 4],
+      pointRadius: 0, fill: false
+    };
+  }
 
-  const ctx = document.getElementById('chartEy').getContext('2d');
-  if (chartEs) { chartEs.destroy(); chartEs = null; }
-
-  const makePoint = (y, label) => y ? [{x: Es(y,R.Q,R.g,R.b,R.m), y, label}] : [];
-
-  chartEs = new Chart(ctx, {
+  var ctx = document.getElementById('chartFsEs');
+  if (!ctx) return;
+  _charts['FsEs'] = new Chart(ctx.getContext('2d'), {
     type: 'scatter',
     data: {
       datasets: [
         {
-          label: 'Kurva E–y',
-          data: filtered.map(p => ({x: p.e, y: p.y})),
-          type: 'line',
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59,130,246,.08)',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: true,
-          tension: 0.3,
+          label: 'Kurva Fs–y (Gaya Spesifik)',
+          data: filtered.map(function(p){ return { x: p.fs, y: p.y }; }),
+          type: 'line', borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.08)',
+          borderWidth: 2.5, pointRadius: 0, fill: true, tension: 0.3
         },
         {
-          label: `yn = ${fmt(R.yn)} m`,
-          data: [{x: R.En, y: R.yn}],
-          pointRadius: 8, pointStyle: 'circle',
-          backgroundColor: '#16a34a', borderColor: '#fff', borderWidth: 2,
+          label: 'yn = '+f(R.yn,3)+' m',
+          data: [{ x: hFs(R.yn,R.Q,R.g,R.b,R.m), y: R.yn }],
+          pointRadius: 9, pointStyle: 'circle', backgroundColor: '#22c55e', borderColor: '#fff', borderWidth: 2, showLine: false
         },
         {
-          label: `yc = ${fmt(R.yc)} m`,
-          data: [{x: R.Emin, y: R.yc}],
-          pointRadius: 8, pointStyle: 'triangle',
-          backgroundColor: '#ef4444', borderColor: '#fff', borderWidth: 2,
+          label: 'yc = '+f(R.yc,3)+' m',
+          data: [{ x: hFs(R.yc,R.Q,R.g,R.b,R.m), y: R.yc }],
+          pointRadius: 9, pointStyle: 'triangle', backgroundColor: '#8b5cf6', borderColor: '#fff', borderWidth: 2, showLine: false
         },
+        R.y1g ? {
+          label: 'y₁ Pintu = '+f(R.y1g,3)+' m',
+          data: [{ x: hFs(R.y1g,R.Q,R.g,R.b,R.m), y: R.y1g }],
+          pointRadius: 9, pointStyle: 'rectRot', backgroundColor: '#ef4444', borderColor: '#fff', borderWidth: 2, showLine: false
+        } : null,
+        R.yconj_g ? {
+          label: 'y₂ Konjugat Pintu = '+f(R.yconj_g,3)+' m',
+          data: [{ x: hFs(R.yconj_g,R.Q,R.g,R.b,R.m), y: R.yconj_g }],
+          pointRadius: 9, pointStyle: 'rect', backgroundColor: '#f97316', borderColor: '#fff', borderWidth: 2, showLine: false
+        } : null,
+        R.ykaki ? {
+          label: 'y kaki Bendung = '+f(R.ykaki,3)+' m',
+          data: [{ x: hFs(R.ykaki,R.Q,R.g,R.b,R.m), y: R.ykaki }],
+          pointRadius: 8, pointStyle: 'rectRot', backgroundColor: '#7c3aed', borderColor: '#fff', borderWidth: 2, showLine: false
+        } : null,
+        vLine(R.yn,'yn','#22c55e'),
+        vLine(R.yc,'yc','#8b5cf6'),
         {
-          label: `y_sub Pintu = ${fmt(R.y_sub_gate)} m`,
-          data: R.y_sub_gate ? [{x: R.E1_g, y: R.y_sub_gate}] : [],
-          pointRadius: 7, pointStyle: 'rectRot',
-          backgroundColor: '#f59e0b', borderColor: '#fff', borderWidth: 2,
-        },
-        {
-          label: `y₁ Pintu = ${fmt(R.y1_gate)} m`,
-          data: [{x: R.E1_g, y: R.y1_gate}],
-          pointRadius: 7, pointStyle: 'rect',
-          backgroundColor: '#d97706', borderColor: '#fff', borderWidth: 2,
-        },
-        {
-          label: `y_sub Bendung = ${fmt(R.y_sub_weir)} m`,
-          data: R.y_sub_weir && R.E_hulu_weir ? [{x: R.E_hulu_weir, y: R.y_sub_weir}] : [],
-          pointRadius: 7, pointStyle: 'rectRot',
-          backgroundColor: '#8b5cf6', borderColor: '#fff', borderWidth: 2,
-        },
-        {
-          label: `y kaki Bendung = ${fmt(R.y_kaki)} m`,
-          data: R.y_kaki && R.E_hulu_weir ? [{x: R.E_hulu_weir, y: R.y_kaki}] : [],
-          pointRadius: 7, pointStyle: 'rect',
-          backgroundColor: '#7c3aed', borderColor: '#fff', borderWidth: 2,
-        },
-        // Emin vertical line
-        {
-          label: `Emin = ${fmt(R.Emin)} m`,
-          data: [{x: R.Emin, y: 0.01}, {x: R.Emin, y: yMax}],
-          type: 'line',
-          borderColor: '#ef4444',
-          borderDash: [5,5],
-          borderWidth: 1.5,
-          pointRadius: 0,
+          label: 'Fsmin = '+f(R.Fsmin,4)+' m³',
+          data: [{ x: R.Fsmin, y: 0 }, { x: R.Fsmin, y: ym }],
+          type: 'line', borderColor: 'rgba(239,68,68,.5)', borderWidth: 1.5, borderDash: [3,3],
+          pointRadius: 0, fill: false
         }
-      ]
+      ].filter(Boolean)
     },
     options: {
       responsive: true,
-      interaction: { mode: 'nearest', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 }, padding: 8 } },
         tooltip: {
           callbacks: {
-            label: ctx => {
-              if (ctx.dataset.type === 'line' && ctx.dataset.pointRadius === 0) return null;
-              return `${ctx.dataset.label}: E=${fmt(ctx.parsed.x,4)}, y=${fmt(ctx.parsed.y,4)}`;
+            label: function(ctx){
+              return ctx.dataset.label + ': Fs=' + f(ctx.parsed.x,4) + ', y=' + f(ctx.parsed.y,4) + ' m';
             }
           }
         }
       },
       scales: {
-        x: { title: { display: true, text: 'Energi Spesifik Es (m)', font:{size:11} }, min: 0 },
-        y: { title: { display: true, text: 'Kedalaman y (m)', font:{size:11} }, min: 0 }
+        x: { title:{ display:true, text:'Gaya Spesifik Fs (m³)' }, grid:{ color:'#f1f5f9' }, min: 0 },
+        y: { title:{ display:true, text:'Kedalaman y (m)' }, grid:{ color:'#f1f5f9' }, min: 0 }
       }
     }
   });
 }
 
-function buildProfileChart() {
-  const R = G;
-  if (!R.prof_gate_M1) return;
+/* ─────────────────────────────────────
+   GRAFIK TAB
+───────────────────────────────────── */
+function renderGrafik() {
+  document.getElementById('grafik-content').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:16px">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="card p-4"><div class="stitle" style="color:#1d4ed8;border-color:#dbeafe">📉 Kurva Energi Spesifik E–y</div><canvas id="chartEy" style="max-height:360px"></canvas></div>' +
+        '<div class="card p-4"><div class="stitle" style="color:#0369a1;border-color:#bae6fd">🌊 Profil Muka Air — Pintu Air</div><canvas id="chartProGate" style="max-height:360px"></canvas></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="card p-4"><div class="stitle" style="color:#7c3aed;border-color:#ddd6fe">🌊 Profil Muka Air — Bendung</div><canvas id="chartProWeir" style="max-height:360px"></canvas></div>' +
+        '<div class="card p-4"><div class="stitle" style="color:#15803d;border-color:#bbf7d0">🌊 Profil Muka Air — Penyempitan</div><canvas id="chartProCon" style="max-height:360px"></canvas></div>' +
+      '</div>' +
+      '<div class="card p-4"><div class="stitle" style="color:#92400e;border-color:#fde68a">📊 Profil Gabungan Semua Skenario</div><canvas id="chartAll" style="max-height:380px"></canvas></div>' +
+    '</div>';
 
-  const ctx = document.getElementById('chartProfile').getContext('2d');
-  if (chartProfile) { chartProfile.destroy(); chartProfile = null; }
+  buildEyChart();
+  buildProChart('chartProGate', G.prof_gM1, G.prof_gM3, 'Pintu Air', '#3b82f6', '#f59e0b');
+  buildProChart('chartProWeir', G.prof_wM1, G.prof_wM3, 'Bendung',   '#8b5cf6', '#d946ef');
+  buildProChart('chartProCon',  G.prof_cM1, null,        'Penyempitan','#10b981', null);
+  buildAllChart();
+}
 
-  const makeProfile = (prof, offset, desc, color, dash=[]) => {
-    if (!prof || !prof.length) return null;
-    const pts = prof.map(p => ({x: -p.x + offset, y: p.y}));  // upstream negative
-    // For M3, downstream positive
-    return {
-      label: desc,
-      data: pts,
-      type: 'line',
-      borderColor: color,
-      borderWidth: 2,
-      pointRadius: 0,
-      fill: false,
-      tension: 0.2,
-      borderDash: dash
-    };
-  };
+/* Chart helper options */
+var CHART_SCALES = {
+  x: { grid: { color: '#f1f5f9' } },
+  y: { grid: { color: '#f1f5f9' }, min: 0 }
+};
 
-  const datasets = [
-    makeProfile(R.prof_gate_M1, 0, 'M1 Hulu Pintu (subkritis)', '#3b82f6'),
-    {
-      label: 'M3 Hilir Pintu (superkritis)',
-      data: R.prof_gate_M3 ? R.prof_gate_M3.map(p => ({x: p.x, y: p.y})) : [],
-      type: 'line', borderColor: '#f59e0b', borderWidth: 2,
-      pointRadius: 0, fill: false, tension: 0.2
-    },
-    // yn line
-    {
-      label: `yn = ${fmt(R.yn)} m`,
-      data: [
-        {x: R.prof_gate_M1 ? -Math.abs(R.prof_gate_M1[R.prof_gate_M1.length-1].x)*1.05 : -100, y: R.yn},
-        {x: R.prof_gate_M3 ? R.prof_gate_M3[R.prof_gate_M3.length-1].x * 1.1 : 20, y: R.yn}
-      ],
-      type:'line', borderColor:'#16a34a', borderWidth:1.5, pointRadius:0,
-      fill:false, borderDash:[8,4]
-    },
-    {
-      label: `yc = ${fmt(R.yc)} m`,
-      data: [
-        {x: R.prof_gate_M1 ? -Math.abs(R.prof_gate_M1[R.prof_gate_M1.length-1].x)*1.05 : -100, y: R.yc},
-        {x: R.prof_gate_M3 ? R.prof_gate_M3[R.prof_gate_M3.length-1].x * 1.1 : 20, y: R.yc}
-      ],
-      type:'line', borderColor:'#ef4444', borderWidth:1.5, pointRadius:0,
-      fill:false, borderDash:[4,4]
-    }
-  ].filter(Boolean);
+/* ── E–y Chart ── */
+function buildEyChart() {
+  destroyChart('Ey');
+  var R = G;
+  var ym = Math.min(R.yn * 2.8, 6);
+  var pts = [];
+  for (var i = 0; i < 150; i++) {
+    var y = 0.01 + (ym - 0.01) * i / 149;
+    pts.push({ y: y, e: hEs(y, R.Q, R.g, R.b, R.m) });
+  }
+  var eMax = R.En * 3.5;
+  var fil = pts.filter(function(p){ return p.e > 0 && p.e < eMax; });
 
-  chartProfile = new Chart(ctx, {
+  function ePt(yv, lbl, col, shape) {
+    if (!yv || isNaN(yv)) return null;
+    return { label: lbl, data: [{ x: hEs(yv,R.Q,R.g,R.b,R.m), y: yv }],
+      pointRadius: 10, pointStyle: shape, backgroundColor: col, borderColor: '#fff', borderWidth: 2, showLine: false };
+  }
+
+  var ctx = document.getElementById('chartEy');
+  if (!ctx) return;
+  _charts['Ey'] = new Chart(ctx.getContext('2d'), {
     type: 'scatter',
-    data: { datasets },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
-        tooltip: {
-          callbacks: {
-            label: ctx => `x=${fmt(ctx.parsed.x,1)} m, y=${fmt(ctx.parsed.y,4)} m`
-          }
+    data: {
+      datasets: [
+        { label: 'Kurva Es–y', data: fil.map(function(p){ return {x:p.e,y:p.y}; }),
+          type:'line', borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.08)',
+          borderWidth:2.5, pointRadius:0, fill:true, tension:.3 },
+        ePt(R.yn,   'yn = '+f(R.yn,3)+' m', '#22c55e', 'circle'),
+        ePt(R.yc,   'yc = '+f(R.yc,3)+' m', '#8b5cf6', 'triangle'),
+        ePt(R.ysub_g,'y_sub Pintu = '+f(R.ysub_g,3)+' m','#f59e0b','rectRot'),
+        ePt(R.y1g,  'y₁ Pintu = '+f(R.y1g,3)+' m','#ef4444','rect'),
+        ePt(R.ysub_w,'y_sub Bendung = '+f(R.ysub_w,3)+' m','#a855f7','rectRot'),
+        ePt(R.ykaki, 'y kaki Bendung = '+f(R.ykaki,3)+' m','#7c3aed','rect'),
+        ePt(R.ysub_c,'y_sub Sempit = '+f(R.ysub_c,3)+' m','#10b981','rectRot'),
+        {
+          label: 'Emin = '+f(R.Emin,4)+' m',
+          data: [{ x:R.Emin, y:0.01 },{ x:R.Emin, y:ym }],
+          type:'line', borderColor:'rgba(239,68,68,.6)', borderWidth:1.5,
+          pointRadius:0, borderDash:[5,4]
         }
+      ].filter(Boolean)
+    },
+    options: {
+      responsive:true,
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:10}, padding:8 } },
+        tooltip:{ callbacks:{ label:function(c){
+          return c.dataset.label+': E='+f(c.parsed.x,4)+', y='+f(c.parsed.y,4)+' m';
+        }}}
       },
-      scales: {
-        x: { title: { display: true, text: 'Jarak dari bangunan (m) — hulu(−) | hilir(+)', font:{size:11} } },
-        y: { title: { display: true, text: 'Kedalaman y (m)', font:{size:11} }, min: 0 }
+      scales:{
+        x:{ title:{display:true,text:'Energi Spesifik Es (m)'}, grid:{color:'#f1f5f9'}, min:0 },
+        y:{ title:{display:true,text:'Kedalaman y (m)'}, grid:{color:'#f1f5f9'}, min:0 }
       }
     }
   });
 }
 
+/* ── Single profile chart ── */
+function buildProChart(canvasId, profM1, profM3, label, colM1, colM3) {
+  destroyChart(canvasId);
+  var R = G;
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (!profM1 && !profM3) {
+    /* show empty chart note */
+    var ctx2d = canvas.getContext('2d');
+    ctx2d.clearRect(0,0,canvas.width,canvas.height);
+    ctx2d.font='14px sans-serif'; ctx2d.fillStyle='#94a3b8'; ctx2d.textAlign='center';
+    ctx2d.fillText('Tidak ada profil untuk skenario ini', canvas.width/2, canvas.height/2);
+    return;
+  }
+  var xMin = profM1 ? -(Math.abs(profM1[profM1.length-1].x) * 1.08) : -5;
+  var xMax = profM3 ? (profM3[profM3.length-1].x * 1.08) : 5;
+  var datasets = [];
+  if (profM1) datasets.push({
+    label: 'M1 Hulu '+label,
+    data: profM1.map(function(p){ return {x:-p.x, y:p.y}; }),
+    type:'line', borderColor:colM1, borderWidth:2.5,
+    backgroundColor: colM1+'22', fill:false, pointRadius:0, tension:.2
+  });
+  if (profM3) datasets.push({
+    label: 'M3 Hilir '+label,
+    data: profM3.map(function(p){ return {x:p.x, y:p.y}; }),
+    type:'line', borderColor:colM3, borderWidth:2.5,
+    fill:false, pointRadius:0, tension:.2
+  });
+  datasets.push({
+    label: 'yn='+f(R.yn,3)+' m',
+    data:[{x:xMin,y:R.yn},{x:xMax,y:R.yn}],
+    type:'line',borderColor:'#22c55e',borderWidth:1.5,pointRadius:0,fill:false,borderDash:[10,5]
+  });
+  datasets.push({
+    label: 'yc='+f(R.yc,3)+' m',
+    data:[{x:xMin,y:R.yc},{x:xMax,y:R.yc}],
+    type:'line',borderColor:'#8b5cf6',borderWidth:1.5,pointRadius:0,fill:false,borderDash:[4,4]
+  });
+
+  _charts[canvasId] = new Chart(canvas.getContext('2d'), {
+    type:'scatter', data:{ datasets: datasets },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:10}, padding:8 } },
+        tooltip:{ callbacks:{ label:function(c){ return 'x='+f(c.parsed.x,1)+' m, y='+f(c.parsed.y,4)+' m'; }}}
+      },
+      scales:{
+        x:{title:{display:true,text:'Jarak dari bangunan (m) — hulu(−) | hilir(+)'},grid:{color:'#f1f5f9'}},
+        y:{title:{display:true,text:'Kedalaman y (m)'},grid:{color:'#f1f5f9'},min:0}
+      }
+    }
+  });
+}
+
+/* ── All scenarios combined ── */
 function buildAllChart() {
-  const R = G;
-  const ctx = document.getElementById('chartAll').getContext('2d');
+  destroyChart('All');
+  var R = G;
+  var canvas = document.getElementById('chartAll');
+  if (!canvas) return;
+  var xE = Math.max(R.L_gM1, R.L_wM1, R.L_cM1, R.L_M2, 50) * 1.12;
 
-  const makeDs = (prof, xOff, neg, label, color, dash=[]) => {
+  function mkDs(prof, neg, lbl, col, dash) {
     if (!prof || !prof.length) return null;
-    const data = prof.map(p => ({x: neg ? -(p.x) + xOff : p.x + xOff, y: p.y}));
     return {
-      label, data,
-      type: 'line', borderColor: color, borderWidth: 2,
-      pointRadius: 0, fill: false, tension: 0.2, borderDash: dash
+      label: lbl,
+      data: prof.map(function(p){ return {x: neg?-p.x:p.x, y:p.y}; }),
+      type:'line', borderColor:col, borderWidth:2, fill:false, pointRadius:0, tension:.2,
+      borderDash: dash || []
     };
-  };
-
-  const xMax = Math.max(
-    R.L_M1_gate, R.L_M1_weir, R.L_M1_con, R.L_M2, 100
-  ) * 1.1;
-
-  const datasets = [
-    makeDs(R.prof_gate_M1, 0, true, 'M1 Pintu (hulu)', '#3b82f6'),
-    makeDs(R.prof_gate_M3, 0, false, 'M3 Pintu (hilir)', '#f59e0b'),
-    makeDs(R.prof_weir_M1, 0, true, 'M1 Bendung (hulu)', '#8b5cf6'),
-    makeDs(R.prof_weir_M3, 0, false, 'M3 Bendung (hilir)', '#d946ef'),
-    makeDs(R.prof_con_M1, 0, true, 'M1 Penyempitan (hulu)', '#06b6d4'),
-    makeDs(R.prof_M2, 0, true, 'M2 (yc → yn)', '#84cc16', [6,3]),
-    // reference lines
-    {
-      label: `yn = ${fmt(R.yn)} m`,
-      data: [{x: -xMax, y: R.yn}, {x: xMax, y: R.yn}],
-      type:'line', borderColor:'#16a34a', borderWidth:1.5, pointRadius:0,
-      fill:false, borderDash:[10,5]
-    },
-    {
-      label: `yc = ${fmt(R.yc)} m`,
-      data: [{x: -xMax, y: R.yc}, {x: xMax, y: R.yc}],
-      type:'line', borderColor:'#ef4444', borderWidth:1.5, pointRadius:0,
-      fill:false, borderDash:[4,4]
-    }
+  }
+  var datasets = [
+    mkDs(R.prof_gM1, true,  'M1 Pintu (hulu)',      '#3b82f6'),
+    mkDs(R.prof_gM3, false, 'M3 Pintu (hilir)',     '#f59e0b'),
+    mkDs(R.prof_wM1, true,  'M1 Bendung (hulu)',    '#8b5cf6'),
+    mkDs(R.prof_wM3, false, 'M3 Bendung (hilir)',   '#d946ef'),
+    mkDs(R.prof_cM1, true,  'M1 Penyempitan (hulu)','#10b981'),
+    mkDs(R.prof_M2,  true,  'M2 (yc→yn)',           '#f97316', [8,4]),
+    { label:'yn='+f(R.yn,3)+' m', data:[{x:-xE,y:R.yn},{x:xE,y:R.yn}],
+      type:'line',borderColor:'#22c55e',borderWidth:1.5,pointRadius:0,fill:false,borderDash:[12,6] },
+    { label:'yc='+f(R.yc,3)+' m', data:[{x:-xE,y:R.yc},{x:xE,y:R.yc}],
+      type:'line',borderColor:'#8b5cf6',borderWidth:1.5,pointRadius:0,fill:false,borderDash:[4,4] }
   ].filter(Boolean);
 
-  new Chart(ctx, {
-    type: 'scatter',
-    data: { datasets },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: x=${fmt(ctx.parsed.x,1)} m, y=${fmt(ctx.parsed.y,4)} m`
-          }
-        }
+  _charts['All'] = new Chart(canvas.getContext('2d'), {
+    type:'scatter', data:{ datasets: datasets },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:14, font:{size:11}, padding:10 } },
+        tooltip:{ callbacks:{ label:function(c){ return c.dataset.label+': x='+f(c.parsed.x,1)+' m, y='+f(c.parsed.y,4)+' m'; }}}
       },
-      scales: {
-        x: { title: { display: true, text: 'Jarak dari bangunan (m) — hulu(−) | hilir(+)', font:{size:11} } },
-        y: { title: { display: true, text: 'Kedalaman y (m)', font:{size:11} }, min: 0 }
+      scales:{
+        x:{title:{display:true,text:'Jarak dari bangunan (m) — hulu(−) | hilir(+)'},grid:{color:'#f1f5f9'}},
+        y:{title:{display:true,text:'Kedalaman y (m)'},grid:{color:'#f1f5f9'},min:0}
       }
     }
   });
 }
 
-/* ─── Auto-calculate on input change ─── */
-document.querySelectorAll('input[type=number]').forEach(inp => {
-  inp.addEventListener('input', () => calculate());
+/* ─────────────────────────────────────
+   INIT
+───────────────────────────────────── */
+document.querySelectorAll('input[type=number]').forEach(function(inp){
+  inp.addEventListener('input', function(){ calculate(); });
 });
-
-/* ─── Initial calculation on load ─── */
-window.addEventListener('DOMContentLoaded', () => calculate());
+document.addEventListener('DOMContentLoaded', function(){ calculate(); });
 </script>
 </body>
 </html>
