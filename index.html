@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kalkulator Hidraulika Saluran Terbuka</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #1e40af;
+    --accent:  #0ea5e9;
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  .tab-btn { transition: all .2s; }
+  .tab-btn.active {
+    background: #1e40af; color: #fff;
+    box-shadow: 0 2px 8px rgba(30,64,175,.35);
+  }
+  .tab-btn:not(.active):hover { background: #dbeafe; color: #1e40af; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .card { background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.08); }
+  .result-good { color:#16a34a; font-weight:600; }
+  .result-warn { color:#d97706; font-weight:600; }
+  .result-bad  { color:#dc2626; font-weight:600; }
+  input[type=number] {
+    width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px;
+    font-size:.9rem; transition: border-color .15s;
+  }
+  input[type=number]:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  label { font-size:.82rem; font-weight:600; color:#374151; margin-bottom:2px; display:block; }
+  .section-title {
+    font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:#6b7280; border-bottom:1px solid #e5e7eb; padding-bottom:4px; margin-bottom:10px;
+  }
+  table { border-collapse:collapse; width:100%; font-size:.82rem; }
+  th { background:#1e40af; color:#fff; padding:7px 10px; text-align:center; }
+  td { padding:6px 10px; text-align:center; border-bottom:1px solid #e5e7eb; }
+  tr:nth-child(even) td { background:#f8fafc; }
+  .badge {
+    display:inline-block; padding:2px 8px; border-radius:999px; font-size:.72rem; font-weight:700;
+  }
+  .badge-blue  { background:#dbeafe; color:#1e40af; }
+  .badge-green { background:#dcfce7; color:#15803d; }
+  .badge-red   { background:#fee2e2; color:#b91c1c; }
+  .badge-amber { background:#fef3c7; color:#b45309; }
+  canvas { max-height: 380px; }
+  .guide-step {
+    display:flex; gap:12px; align-items:flex-start; padding:12px 0;
+    border-bottom:1px solid #f1f5f9;
+  }
+  .step-num {
+    min-width:30px; height:30px; border-radius:50%; background:#1e40af;
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:.85rem; flex-shrink:0;
+  }
+  .formula-box {
+    background:#f0f9ff; border-left:4px solid #0ea5e9;
+    padding:8px 14px; border-radius:0 8px 8px 0;
+    font-family: 'Courier New', monospace; font-size:.82rem; color:#0c4a6e;
+    margin:6px 0;
+  }
+  @media (max-width:640px) {
+    th, td { padding:5px 6px; font-size:.73rem; }
+  }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- ===== HEADER ===== -->
+<header class="bg-gradient-to-r from-blue-800 to-sky-600 text-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center gap-2">
+    <div class="text-3xl">🌊</div>
+    <div>
+      <h1 class="text-xl font-bold leading-tight">Kalkulator Hidraulika Saluran Terbuka</h1>
+      <p class="text-sky-200 text-xs">Aliran Tetap · Pintu Air · Bendung · Penyempitan · Standard Step</p>
+    </div>
+  </div>
+</header>
+
+<!-- ===== TABS ===== -->
+<div class="max-w-6xl mx-auto px-4 mt-5">
+  <div class="flex flex-wrap gap-2 mb-4">
+    <button class="tab-btn active px-4 py-2 rounded-lg font-semibold text-sm border border-blue-200" onclick="switchTab('input',this)">📥 Input Data</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm border border-blue-200" onclick="switchTab('hasil',this)">📊 Kalkulasi & Hasil</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm border border-blue-200" onclick="switchTab('grafik',this)">📈 Visualisasi Grafik</button>
+    <button class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm border border-blue-200" onclick="switchTab('panduan',this)">📖 Panduan</button>
+  </div>
+
+  <!-- ==============================
+       TAB 1 : INPUT DATA
+  =============================== -->
+  <div id="tab-input" class="tab-pane active">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Saluran -->
+      <div class="card p-5">
+        <div class="section-title">A. Data Saluran (Trapesium / Persegi)</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label>Debit Q (m³/s)</label>
+            <input type="number" id="inp_Q" value="3.000" step="0.001" min="0.001" />
+          </div>
+          <div>
+            <label>Lebar dasar b (m)</label>
+            <input type="number" id="inp_b" value="2.000" step="0.01" min="0.01" />
+          </div>
+          <div>
+            <label>Talud m (m=0 → persegi)</label>
+            <input type="number" id="inp_m" value="1.000" step="0.1" min="0" />
+          </div>
+          <div>
+            <label>Manning n</label>
+            <input type="number" id="inp_n" value="0.0130" step="0.0001" min="0.001" />
+          </div>
+          <div>
+            <label>Kemiringan dasar S₀</label>
+            <input type="number" id="inp_S0" value="0.00100" step="0.00001" min="0.000001" />
+          </div>
+          <div>
+            <label>Gravitasi g (m/s²)</label>
+            <input type="number" id="inp_g" value="9.81" step="0.01" min="9" />
+          </div>
+          <div>
+            <label>Koef. kontraksi Cc</label>
+            <input type="number" id="inp_Cc" value="1.000" step="0.01" min="0.1" max="1" />
+          </div>
+        </div>
+        <div class="mt-3 p-3 bg-blue-50 rounded-lg text-xs text-blue-800">
+          <b>ℹ️ Petunjuk:</b> m = 0 untuk saluran persegi panjang. Cc ≈ 0.61 untuk pintu sorong nyata, atau 1.0 seperti contoh dosen.
+        </div>
+      </div>
+
+      <!-- Bangunan Air -->
+      <div class="card p-5">
+        <div class="section-title">B. Data Bangunan Air</div>
+
+        <div class="mb-4">
+          <div class="text-xs font-bold text-sky-700 mb-2">🚪 Pintu Air (Sluice Gate)</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label>Bukaan pintu a (m)</label>
+              <input type="number" id="inp_a" value="0.400" step="0.01" min="0.01" />
+            </div>
+            <div>
+              <label>Target kenaikan hulu Δh (m)</label>
+              <input type="number" id="inp_dh" value="0.500" step="0.01" min="0" />
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="text-xs font-bold text-sky-700 mb-2">🪨 Bendung / Ambang</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label>Tinggi bendung Δz (m)</label>
+              <input type="number" id="inp_Dz" value="0.700" step="0.01" min="0" />
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="text-xs font-bold text-sky-700 mb-2">↔️ Penyempitan / Pelebaran</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label>Lebar penampang b₂ (m)</label>
+              <input type="number" id="inp_b2" value="1.500" step="0.1" min="0.1" />
+            </div>
+          </div>
+        </div>
+
+        <button onclick="calculate()" class="mt-2 w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl shadow transition-all text-sm">
+          ⚡ Hitung Semua Skenario
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Quick result preview -->
+    <div id="quick-preview" class="card mt-4 p-5 hidden">
+      <div class="section-title">Hasil Cepat (Kondisi Dasar)</div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="quick-cards"></div>
+    </div>
+  </div>
+
+  <!-- ==============================
+       TAB 2 : KALKULASI & HASIL
+  =============================== -->
+  <div id="tab-hasil" class="tab-pane">
+    <div id="hasil-content">
+      <div class="card p-10 text-center text-slate-400">
+        <div class="text-4xl mb-3">🔢</div>
+        <p>Belum ada hasil. Isi data di Tab <b>Input</b> lalu klik <b>Hitung</b>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================
+       TAB 3 : GRAFIK
+  =============================== -->
+  <div id="tab-grafik" class="tab-pane">
+    <div id="grafik-content">
+      <div class="card p-10 text-center text-slate-400">
+        <div class="text-4xl mb-3">📈</div>
+        <p>Belum ada grafik. Isi data di Tab <b>Input</b> lalu klik <b>Hitung</b>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================
+       TAB 4 : PANDUAN
+  =============================== -->
+  <div id="tab-panduan" class="tab-pane">
+    <div class="card p-6 mb-4">
+      <h2 class="text-lg font-bold text-blue-800 mb-4">📖 Panduan Penggunaan</h2>
+
+      <div class="guide-step">
+        <div class="step-num">1</div>
+        <div>
+          <b>Isi Data Saluran</b> di Tab Input.<br/>
+          <span class="text-slate-500 text-sm">Masukkan Q, b, m, n, S₀. Untuk saluran persegi, set m = 0.</span>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">2</div>
+        <div>
+          <b>Isi Data Bangunan Air</b> sesuai skenario yang diinginkan.<br/>
+          <span class="text-slate-500 text-sm">Bisa 1 atau lebih skenario sekaligus (pintu, bendung, penyempitan).</span>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">3</div>
+        <div>
+          <b>Klik "Hitung Semua Skenario"</b> atau ubah nilai input (auto-hitung).<br/>
+          <span class="text-slate-500 text-sm">Hasil muncul otomatis di Tab Hasil dan Tab Grafik.</span>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">4</div>
+        <div>
+          <b>Baca Tab Kalkulasi & Hasil</b> — ringkasan 4 kedalaman acuan, Es, Fs, Fr, dan jarak profil.<br/>
+          <span class="text-slate-500 text-sm">Warna hijau = kondisi normal; merah = terbendung/kritis.</span>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">5</div>
+        <div>
+          <b>Lihat Tab Visualisasi Grafik</b> untuk Kurva E–y dan Profil Muka Air.<br/>
+          <span class="text-slate-500 text-sm">Grafik interaktif: hover untuk nilai, klik legenda untuk sembunyikan/tampilkan seri.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-6 mb-4">
+      <h2 class="text-lg font-bold text-blue-800 mb-3">📐 Logika Hidraulika</h2>
+      <div class="space-y-3 text-sm text-slate-700">
+
+        <div>
+          <b class="text-blue-700">1. Kedalaman Normal (yn)</b> — dihitung dari Manning dengan metode biseksi:
+          <div class="formula-box">Q = (1/n) · A · R^(2/3) · S₀^(1/2)</div>
+          Jika yn &gt; yc → saluran <b>landai</b> (aliran normal subkritis).
+        </div>
+
+        <div>
+          <b class="text-blue-700">2. Kedalaman Kritis (yc)</b> — kondisi Froude = 1:
+          <div class="formula-box">g · A³ / T = Q²</div>
+          Diselesaikan dengan biseksi pada fungsi f(y) = g·A³/T − Q².
+        </div>
+
+        <div>
+          <b class="text-blue-700">3. Energi Spesifik (Es) &amp; Gaya Spesifik (Fs)</b>
+          <div class="formula-box">Es = y + Q²/(2g·A²)
+Fs = Q²/(g·A) + b·y²/2 + m·y³/3</div>
+          Satu nilai Es punya dua kedalaman (subkritis &amp; superkritis).
+        </div>
+
+        <div>
+          <b class="text-blue-700">4. Pintu Air</b>
+          <div class="formula-box">y₁ = Cc · a  → superkritis di hilir pintu
+E_hulu = E_hilir = Es(y₁)  → cari y_sub (subkritis)</div>
+        </div>
+
+        <div>
+          <b class="text-blue-700">5. Bendung</b>
+          <div class="formula-box">E₂ = E₁ − Δz
+Jika E₂ &lt; Emin → TERBENDUNG
+  E_hulu = Emin + Δz, cari y_sub hulu baru
+  y kaki = cabang superkritis pada E_hulu</div>
+        </div>
+
+        <div>
+          <b class="text-blue-700">6. Penyempitan</b>
+          <div class="formula-box">Hitung yc₂ dan Emin₂ pada lebar b₂
+Jika E₁ &lt; Emin₂ → TERBENDUNG
+  E_hulu = Emin₂, cari y_sub pada lebar b</div>
+        </div>
+
+        <div>
+          <b class="text-blue-700">7. Loncatan Hidrolik</b>
+          <div class="formula-box">Kedalaman konjugat: cari y₂ sehingga Fs(y₂) = Fs(y₁)
+y₂ > yn → loncatan di hilir bangunan</div>
+        </div>
+
+        <div>
+          <b class="text-blue-700">8. Profil Muka Air — Standard Step</b>
+          <div class="formula-box">Sf = (n·V / R^(2/3))²
+ΔX = (E_hilir − E_hulu) / (S₀ − S̄f)</div>
+          Kurva M1: subkritis y_sub → yn(1+ε), hitung ke hulu.<br/>
+          Kurva M3: superkritis y₁ → y_j, hitung ke hilir.
+        </div>
+      </div>
+    </div>
+
+    
+  </div><!-- end panduan -->
+
+</div><!-- end max-w -->
+
+<footer class="text-center text-xs text-slate-400 py-6 mt-8">
+  Kalkulator Hidraulika Saluran Terbuka • Aliran Tetap • Dibuat dengan HTML + Chart.js + Tailwind CSS
+</footer>
+
+<!-- =====================================================================
+     JAVASCRIPT — ENGINE
+====================================================================== -->
+<script>
+'use strict';
+
+/* ─── Tab Navigation ─── */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ─── Hydraulic primitives ─── */
+function area(y, b, m)   { return (b + m * y) * y; }
+function perim(y, b, m)  { return b + 2 * y * Math.sqrt(1 + m * m); }
+function topW(y, b, m)   { return b + 2 * m * y; }
+function hydR(y, b, m)   { const A = area(y, b, m); return A / perim(y, b, m); }
+function vel(y, Q, b, m) { return Q / area(y, b, m); }
+
+function Es(y, Q, g, b, m) {
+  const A = area(y, b, m);
+  return y + (Q * Q) / (2 * g * A * A);
+}
+
+function Fs(y, Q, g, b, m) {
+  const A = area(y, b, m);
+  return (Q * Q) / (g * A) + b * y * y / 2 + m * y * y * y / 3;
+}
+
+function Fr(y, Q, g, b, m) {
+  const A = area(y, b, m), T = topW(y, b, m), V = Q / A;
+  return V / Math.sqrt(g * A / T);
+}
+
+function manningQ(y, n, S0, b, m) {
+  const A = area(y, b, m), R = hydR(y, b, m);
+  return (1 / n) * A * Math.pow(R, 2 / 3) * Math.sqrt(S0);
+}
+
+/* ─── Bisection solver ─── */
+function bisect(f, lo, hi, tol = 1e-7, maxIter = 200) {
+  let flo = f(lo), fhi = f(hi);
+  if (flo * fhi > 0) return null; // no root bracketed
+  for (let i = 0; i < maxIter; i++) {
+    const mid = (lo + hi) / 2;
+    const fmid = f(mid);
+    if (Math.abs(fmid) < tol || (hi - lo) / 2 < tol) return mid;
+    if (flo * fmid < 0) { hi = mid; fhi = fmid; }
+    else { lo = mid; flo = fmid; }
+  }
+  return (lo + hi) / 2;
+}
+
+/* ─── Find yn (normal depth) ─── */
+function findYn(Q, n, S0, b, m, yMax = 20) {
+  return bisect(y => manningQ(y, n, S0, b, m) - Q, 1e-4, yMax);
+}
+
+/* ─── Find yc (critical depth) ─── */
+function findYc(Q, g, b, m, yMax = 20) {
+  return bisect(y => {
+    const A = area(y, b, m), T = topW(y, b, m);
+    return g * A * A * A / T - Q * Q;
+  }, 1e-4, yMax);
+}
+
+/* ─── Find y given Es target (branch: 'sub' y>=yc, 'super' y<yc) ─── */
+function findYfromEs(Etarget, Q, g, b, m, yc, branch) {
+  if (branch === 'sub') {
+    // search from yc upward
+    return bisect(y => Es(y, Q, g, b, m) - Etarget, yc, 30);
+  } else {
+    // search from 0 to yc
+    return bisect(y => Es(y, Q, g, b, m) - Etarget, 1e-5, yc - 1e-7);
+  }
+}
+
+/* ─── Find y given Fs target (branch: 'sub' y>=yc, 'super' y<yc) ─── */
+function findYfromFs(Ftarget, Q, g, b, m, yc, branch) {
+  if (branch === 'sub') {
+    return bisect(y => Fs(y, Q, g, b, m) - Ftarget, yc, 30);
+  } else {
+    return bisect(y => Fs(y, Q, g, b, m) - Ftarget, 1e-5, yc - 1e-7);
+  }
+}
+
+/* ─── Standard Step ─── */
+function standardStep(y_start, y_end, n, S0, Q, g, b, m, nSteps = 60) {
+  const steps = [];
+  const isSubcrit = y_start >= y_end ? y_start > y_end / 1 : false;
+  // direction: for M1 sub: y decreases from y_sub to yn → integrate toward upstream
+  // We always integrate from y_start → y_end in nSteps
+  const dy = (y_end - y_start) / nSteps;
+  let x = 0;
+  let y_cur = y_start;
+
+  const Sf_calc = (y) => {
+    const A = area(y, b, m), R = hydR(y, b, m), V = Q / A;
+    return Math.pow(n * V / Math.pow(R, 2 / 3), 2);
+  };
+
+  steps.push({ x: 0, y: y_cur, Es: Es(y_cur, Q, g, b, m) });
+
+  for (let i = 0; i < nSteps; i++) {
+    const y1 = y_cur;
+    const y2 = y_cur + dy;
+    const E1 = Es(y1, Q, g, b, m);
+    const E2 = Es(y2, Q, g, b, m);
+    const Sf1 = Sf_calc(y1);
+    const Sf2 = Sf_calc(y2);
+    const Sf_avg = (Sf1 + Sf2) / 2;
+    const denom = S0 - Sf_avg;
+    if (Math.abs(denom) < 1e-12) { y_cur = y2; continue; }
+    const dX = (E2 - E1) / denom;
+    x += dX;
+    y_cur = y2;
+    steps.push({ x, y: y_cur, Es: E2 });
+  }
+  return steps;
+}
+
+/* ─── Main Calculation ─── */
+let G = {}; // global results store
+let chartEs = null, chartProfile = null;
+
+function calculate() {
+  // Read inputs
+  const Q  = parseFloat(document.getElementById('inp_Q').value);
+  const b  = parseFloat(document.getElementById('inp_b').value);
+  const m  = parseFloat(document.getElementById('inp_m').value);
+  const n  = parseFloat(document.getElementById('inp_n').value);
+  const S0 = parseFloat(document.getElementById('inp_S0').value);
+  const g  = parseFloat(document.getElementById('inp_g').value);
+  const Cc = parseFloat(document.getElementById('inp_Cc').value);
+  const a  = parseFloat(document.getElementById('inp_a').value);
+  const dh = parseFloat(document.getElementById('inp_dh').value);
+  const Dz = parseFloat(document.getElementById('inp_Dz').value);
+  const b2 = parseFloat(document.getElementById('inp_b2').value);
+
+  if ([Q,b,m,n,S0,g,Cc,a,dh,Dz,b2].some(isNaN)) return;
+
+  /* ── Base ── */
+  const yn = findYn(Q, n, S0, b, m);
+  const yc = findYc(Q, g, b, m);
+  const Emin = Es(yc, Q, g, b, m);
+  const Fsmin = Fs(yc, Q, g, b, m);
+  const En   = Es(yn, Q, g, b, m);
+  const Fn   = Fs(yn, Q, g, b, m);
+  const Frn  = Fr(yn, Q, g, b, m);
+  const mild = yn > yc;
+
+  // Alternate depth at E = En (supercritical branch)
+  const y_alt = findYfromEs(En, Q, g, b, m, yc, 'super');
+  // Conjugate to yn
+  const Fsn = Fs(yn, Q, g, b, m);
+  const y_j = findYfromFs(Fsn, Q, g, b, m, yc, 'super');
+
+  /* ── Scenario 1: Gate ── */
+  const y1_gate = Cc * a;
+  const A1_g = area(y1_gate, b, m);
+  const E1_g = Es(y1_gate, Q, g, b, m);
+  const y_sub_gate = findYfromEs(E1_g, Q, g, b, m, yc, 'sub');
+  const Fr1_g = Fr(y1_gate, Q, g, b, m);
+  const Fs1_g = Fs(y1_gate, Q, g, b, m);
+  const y2_conj_gate = findYfromFs(Fs1_g, Q, g, b, m, yc, 'sub');
+  const gate_terbendung = y1_gate < yc; // should always be true for valid gate opening
+  // gate position: y2 vs yn
+  const gate_jump = y2_conj_gate > yn ? 'hilir' : (y2_conj_gate < yn ? 'tenggelam' : 'tepat');
+
+  // Scenario 2: target hulu (Skenario 2 gate)
+  const y_target = yn + dh;
+  const E_target = Es(y_target, Q, g, b, m);
+  const y1_gate2 = findYfromEs(E_target, Q, g, b, m, yc, 'super');
+  const a_req = y1_gate2 ? y1_gate2 / Cc : null;
+
+  /* ── Scenario 2: Weir ── */
+  const E1_weir = En; // upstream energy = En before weir
+  const E2_weir = E1_weir - Dz;
+  const weir_blocked = E2_weir < Emin;
+  let y_sub_weir, y_kaki, E_hulu_weir, Fr_kaki, Fs_kaki, y_conj_weir;
+  if (weir_blocked) {
+    E_hulu_weir = Emin + Dz;
+    y_sub_weir  = findYfromEs(E_hulu_weir, Q, g, b, m, yc, 'sub');
+    y_kaki      = findYfromEs(E_hulu_weir, Q, g, b, m, yc, 'super');
+    Fr_kaki     = y_kaki ? Fr(y_kaki, Q, g, b, m) : null;
+    Fs_kaki     = y_kaki ? Fs(y_kaki, Q, g, b, m) : null;
+    y_conj_weir = Fs_kaki ? findYfromFs(Fs_kaki, Q, g, b, m, yc, 'sub') : null;
+  } else {
+    E_hulu_weir = E1_weir;
+    y_sub_weir  = yn;
+    y_kaki      = findYfromEs(E2_weir, Q, g, b, m, yc, 'super');
+    Fr_kaki     = y_kaki ? Fr(y_kaki, Q, g, b, m) : null;
+    Fs_kaki     = y_kaki ? Fs(y_kaki, Q, g, b, m) : null;
+    y_conj_weir = Fs_kaki ? findYfromFs(Fs_kaki, Q, g, b, m, yc, 'sub') : null;
+  }
+
+  /* ── Scenario 3: Constriction ── */
+  const yc2   = findYc(Q, g, b2, m);
+  const Emin2 = yc2 ? Es(yc2, Q, g, b2, m) : null;
+  const E1_con = En;
+  const con_blocked = Emin2 && E1_con < Emin2;
+  let y_sub_con, y_hilir_con, E_hulu_con, Fr_hilir_con, Fs_hilir_con, y_conj_con;
+  if (con_blocked) {
+    E_hulu_con  = Emin2;
+    y_sub_con   = findYfromEs(E_hulu_con, Q, g, b, m, yc, 'sub');
+    y_hilir_con = findYfromEs(E_hulu_con, Q, g, b, m, yc, 'super');
+    Fr_hilir_con= y_hilir_con ? Fr(y_hilir_con, Q, g, b, m) : null;
+    Fs_hilir_con= y_hilir_con ? Fs(y_hilir_con, Q, g, b, m) : null;
+    y_conj_con  = Fs_hilir_con ? findYfromFs(Fs_hilir_con, Q, g, b, m, yc, 'sub') : null;
+  } else {
+    E_hulu_con  = E1_con;
+    y_sub_con   = yn;
+    // leher: subkritis pada lebar b2
+    y_hilir_con = findYfromEs(E1_con, Q, g, b2, m, yc2, 'sub');
+    Fr_hilir_con= y_hilir_con ? Fr(y_hilir_con, Q, g, b2, m) : null;
+    Fs_hilir_con= null;
+    y_conj_con  = null;
+  }
+
+  /* ── Standard Step profiles ── */
+  const eps = 0.01;
+  const yn_hi = yn * (1 + eps), yn_lo = yn * (1 - eps);
+
+  // Gate M1 (upstream backwater)
+  let prof_gate_M1 = null, L_M1_gate = 0;
+  if (y_sub_gate && y_sub_gate > yn) {
+    prof_gate_M1 = standardStep(y_sub_gate, yn_hi, n, S0, Q, g, b, m, 60);
+    L_M1_gate = prof_gate_M1.length > 1 ? Math.abs(prof_gate_M1[prof_gate_M1.length-1].x) : 0;
+  }
+
+  // Gate M3 (downstream supercritical → jump)
+  let prof_gate_M3 = null, L_M3_gate = 0;
+  if (y_j && y1_gate < yc) {
+    prof_gate_M3 = standardStep(y1_gate, y_j, n, S0, Q, g, b, m, 60);
+    L_M3_gate = prof_gate_M3.length > 1 ? Math.abs(prof_gate_M3[prof_gate_M3.length-1].x) : 0;
+  }
+
+  // Weir M1
+  let prof_weir_M1 = null, L_M1_weir = 0;
+  if (y_sub_weir && y_sub_weir > yn) {
+    prof_weir_M1 = standardStep(y_sub_weir, yn_hi, n, S0, Q, g, b, m, 60);
+    L_M1_weir = prof_weir_M1.length > 1 ? Math.abs(prof_weir_M1[prof_weir_M1.length-1].x) : 0;
+  }
+  // Weir M3
+  let prof_weir_M3 = null, L_M3_weir = 0;
+  if (y_kaki && y_kaki < yc && y_j) {
+    prof_weir_M3 = standardStep(y_kaki, y_j, n, S0, Q, g, b, m, 60);
+    L_M3_weir = prof_weir_M3.length > 1 ? Math.abs(prof_weir_M3[prof_weir_M3.length-1].x) : 0;
+  }
+
+  // Constriction M1
+  let prof_con_M1 = null, L_M1_con = 0;
+  if (y_sub_con && y_sub_con > yn) {
+    prof_con_M1 = standardStep(y_sub_con, yn_hi, n, S0, Q, g, b, m, 60);
+    L_M1_con = prof_con_M1.length > 1 ? Math.abs(prof_con_M1[prof_con_M1.length-1].x) : 0;
+  }
+
+  // M2 (yc → yn from downstream free fall)
+  let prof_M2 = null, L_M2 = 0;
+  prof_M2 = standardStep(yc, yn_lo, n, S0, Q, g, b, m, 60);
+  L_M2 = prof_M2.length > 1 ? Math.abs(prof_M2[prof_M2.length-1].x) : 0;
+
+  /* ── Store ── */
+  G = {
+    Q, b, m, n, S0, g, Cc, a, dh, Dz, b2,
+    yn, yc, Emin, Fsmin, En, Fn, Frn, mild,
+    y_alt, y_j,
+    // gate
+    y1_gate, y_sub_gate, E1_g, Fr1_g, Fs1_g, y2_conj_gate, gate_jump,
+    y1_gate2, a_req,
+    // weir
+    weir_blocked, E2_weir, E_hulu_weir, y_sub_weir, y_kaki, Fr_kaki, Fs_kaki, y_conj_weir,
+    // constriction
+    yc2, Emin2, con_blocked, E_hulu_con, y_sub_con, y_hilir_con, Fr_hilir_con, y_conj_con,
+    // profiles
+    prof_gate_M1, L_M1_gate, prof_gate_M3, L_M3_gate,
+    prof_weir_M1, L_M1_weir, prof_weir_M3, L_M3_weir,
+    prof_con_M1, L_M1_con, prof_M2, L_M2,
+    eps
+  };
+
+  renderQuickPreview();
+  renderHasil();
+  renderGrafik();
+}
+
+/* ──────────────────────────────────────
+   FORMAT HELPERS
+──────────────────────────────────────── */
+const fmt = (v, d=4) => (v == null || isNaN(v)) ? '—' : Number(v).toFixed(d);
+const fmtFr = v => {
+  if (v == null) return '—';
+  const f = Number(v).toFixed(3);
+  const color = v < 1 ? 'result-good' : v > 1 ? 'result-bad' : '';
+  return `<span class="${color}">${f}</span>`;
+};
+
+/* ──────────────────────────────────────
+   QUICK PREVIEW (on Input tab)
+──────────────────────────────────────── */
+function renderQuickPreview() {
+  const { yn, yc, Emin, Frn, mild } = G;
+  const cards = document.getElementById('quick-cards');
+  const items = [
+    { label:'Kedalaman Normal yn', val:`${fmt(yn,4)} m`, color:'blue' },
+    { label:'Kedalaman Kritis yc', val:`${fmt(yc,4)} m`, color:'sky' },
+    { label:'Energi Min Emin',     val:`${fmt(Emin,4)} m`, color:'indigo' },
+    { label:'Jenis Saluran',       val: mild ? 'LANDAI (Mild)' : 'CURAM (Steep)', color: mild ? 'green':'red' }
+  ];
+  cards.innerHTML = items.map(it => `
+    <div class="bg-${it.color}-50 border border-${it.color}-200 rounded-xl p-3 text-center">
+      <div class="text-xs text-${it.color}-500 font-semibold mb-1">${it.label}</div>
+      <div class="text-lg font-bold text-${it.color}-700">${it.val}</div>
+    </div>`).join('');
+  document.getElementById('quick-preview').classList.remove('hidden');
+}
+
+/* ──────────────────────────────────────
+   HASIL TAB
+──────────────────────────────────────── */
+function renderHasil() {
+  const R = G;
+  const mild_badge = R.mild
+    ? '<span class="badge badge-green">LANDAI — Aliran Normal SUBKRITIS</span>'
+    : '<span class="badge badge-red">CURAM — Aliran Normal SUPERKRITIS</span>';
+
+  /* ── Ringkasan Tabel ── */
+  const rows = [
+    ['y normal (yn)', fmt(R.yn), fmt(R.yn), fmt(R.yn), fmt(R.yn)],
+    ['y kritis (yc)', fmt(R.yc), fmt(R.yc), fmt(R.yc), fmt(R.yc)],
+    ['y subkritis hulu', fmt(R.yn), fmt(R.y_sub_gate), fmt(R.y_sub_weir), fmt(R.y_sub_con)],
+    ['y superkritis hilir', fmt(R.y_alt), fmt(R.y1_gate), fmt(R.y_kaki), fmt(R.y_hilir_con)],
+    ['Es (yn)', fmt(R.En), fmt(R.En), fmt(R.En), fmt(R.En)],
+    ['Es (yc)', fmt(R.Emin), fmt(R.Emin), fmt(R.Emin), fmt(R.Emin)],
+    ['Es (y subkritis)', fmt(R.En), fmt(R.E1_g), R.weir_blocked?fmt(R.E_hulu_weir):fmt(R.En), R.con_blocked?fmt(R.E_hulu_con):fmt(R.En)],
+    ['Fr (yn)', fmt(R.Frn,4), fmt(R.Frn,4), fmt(R.Frn,4), fmt(R.Frn,4)],
+    ['Fr (y subkritis)', fmt(R.Frn,4), fmt(Fr(R.y_sub_gate,R.Q,R.g,R.b,R.m),4), fmt(Fr(R.y_sub_weir,R.Q,R.g,R.b,R.m),4), fmt(Fr(R.y_sub_con,R.Q,R.g,R.b,R.m),4)],
+    ['Fr (y superkritis)', fmt(Fr(R.y_alt,R.Q,R.g,R.b,R.m),4), fmt(R.Fr1_g,4), fmt(R.Fr_kaki,4), fmt(R.Fr_hilir_con,4)],
+  ];
+
+  const tblRows = rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+
+  /* ── Gate details ── */
+  const gateStatus = R.y_sub_gate && R.y_sub_gate > R.yn
+    ? `<span class="badge badge-amber">PEMBENDUNGAN ↑${fmt(R.y_sub_gate - R.yn,3)} m di atas yn</span>`
+    : `<span class="badge badge-green">Tidak terbendung</span>`;
+  const gateJump = R.gate_jump === 'hilir'
+    ? `<span class="badge badge-blue">Loncatan di HILIR (M3 → y_j → yn)</span>`
+    : `<span class="badge badge-green">Loncatan tenggelam</span>`;
+
+  /* ── Weir details ── */
+  const weirStatus = R.weir_blocked
+    ? `<span class="badge badge-red">TERBENDUNG — E₂ (${fmt(R.E2_weir,4)} m) &lt; Emin (${fmt(R.Emin,4)} m)</span>`
+    : `<span class="badge badge-green">LOLOS — E₂ (${fmt(R.E2_weir,4)} m) ≥ Emin (${fmt(R.Emin,4)} m)</span>`;
+
+  /* ── Constriction details ── */
+  const conStatus = R.con_blocked
+    ? `<span class="badge badge-red">TERBENDUNG — E₁ (${fmt(R.En,4)} m) &lt; Emin₂ (${fmt(R.Emin2,4)} m)</span>`
+    : `<span class="badge badge-green">LOLOS — E₁ (${fmt(R.En,4)} m) ≥ Emin₂ (${fmt(R.Emin2,4)} m)</span>`;
+
+  document.getElementById('hasil-content').innerHTML = `
+  <div class="space-y-4">
+
+    <!-- Kondisi Dasar -->
+    <div class="card p-5">
+      <div class="section-title">A. Kondisi Dasar Saluran</div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+        <div class="bg-blue-50 rounded-xl p-3 text-center">
+          <div class="text-xs text-blue-500 font-semibold">yn</div>
+          <div class="text-xl font-bold text-blue-700">${fmt(R.yn)} m</div>
+        </div>
+        <div class="bg-sky-50 rounded-xl p-3 text-center">
+          <div class="text-xs text-sky-500 font-semibold">yc</div>
+          <div class="text-xl font-bold text-sky-700">${fmt(R.yc)} m</div>
+        </div>
+        <div class="bg-indigo-50 rounded-xl p-3 text-center">
+          <div class="text-xs text-indigo-500 font-semibold">Emin</div>
+          <div class="text-xl font-bold text-indigo-700">${fmt(R.Emin)} m</div>
+        </div>
+        <div class="bg-violet-50 rounded-xl p-3 text-center">
+          <div class="text-xs text-violet-500 font-semibold">Fr (yn)</div>
+          <div class="text-xl font-bold text-violet-700">${fmt(R.Frn,4)}</div>
+        </div>
+      </div>
+      <div class="mb-2">${mild_badge}</div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm mt-3">
+        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">Es(yn) =</span> <b>${fmt(R.En)} m</b></div>
+        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">Fs(yn) =</span> <b>${fmt(R.Fn)} m³</b></div>
+        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">y_alt =</span> <b>${fmt(R.y_alt)} m</b></div>
+        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">y_j (konjugat yn) =</span> <b>${fmt(R.y_j)} m</b></div>
+        <div class="bg-slate-50 rounded p-2"><span class="text-slate-500">Fsmin =</span> <b>${fmt(R.Fsmin)} m³</b></div>
+      </div>
+    </div>
+
+    <!-- Ringkasan Tabel -->
+    <div class="card p-5">
+      <div class="section-title">B. Tabel Ringkasan — Empat Kedalaman Acuan</div>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Besaran</th>
+              <th>Kondisi Dasar</th>
+              <th>Pintu Air</th>
+              <th>Bendung</th>
+              <th>Penyempitan</th>
+            </tr>
+          </thead>
+          <tbody>${tblRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Gate Scenario -->
+    <div class="card p-5">
+      <div class="section-title">C. Skenario Pintu Air (Sluice Gate)</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm font-bold text-sky-700 mb-2">Skenario 1 — Bukaan a = ${fmt(R.a,3)} m (Cc = ${R.Cc})</p>
+          <div class="space-y-1 text-sm">
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y₁ hilir pintu (superkritis)</span><b>${fmt(R.y1_gate)} m</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>E₁ (energi spesifik)</span><b>${fmt(R.E1_g)} m</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>Fr₁</span><b>${fmt(R.Fr1_g,4)}</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y_sub hulu (subkritis)</span><b>${fmt(R.y_sub_gate)} m</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>Kenaikan muka air hulu</span><b>${fmt(R.y_sub_gate && R.yn ? R.y_sub_gate - R.yn : null)} m</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y₂ konjugat dari y₁</span><b>${fmt(R.y2_conj_gate)} m</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>L remous M1 (hulu)</span><b>${fmt(R.L_M1_gate,1)} m</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>L ke loncatan M3 (hilir)</span><b>${fmt(R.L_M3_gate,1)} m</b></div>
+          </div>
+          <div class="mt-2 space-y-1">${gateStatus}<br/>${gateJump}</div>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-sky-700 mb-2">Skenario 2 — Target kenaikan Δh = ${fmt(R.dh,3)} m</p>
+          <div class="space-y-1 text-sm">
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y_target hulu</span><b>${fmt(R.yn + R.dh)} m</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>y₁ superkritis yang cocok</span><b>${fmt(R.y1_gate2)} m</b></div>
+            <div class="flex justify-between bg-slate-50 rounded p-2"><span>Bukaan pintu diperlukan a</span><b class="text-blue-700">${fmt(R.a_req,4)} m</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weir Scenario -->
+    <div class="card p-5">
+      <div class="section-title">D. Skenario Bendung / Ambang (Δz = ${fmt(R.Dz,3)} m)</div>
+      <div class="mb-3">${weirStatus}</div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>E₁ = Es(yn)</span><b>${fmt(R.En)} m</b></div>
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>E₂ = E₁ − Δz</span><b>${fmt(R.E2_weir)} m</b></div>
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>Emin</span><b>${fmt(R.Emin)} m</b></div>
+        ${R.weir_blocked ? `
+        <div class="flex justify-between bg-orange-50 rounded p-2"><span>E_hulu baru</span><b>${fmt(R.E_hulu_weir)} m</b></div>
+        <div class="flex justify-between bg-orange-50 rounded p-2"><span>y_sub hulu baru</span><b>${fmt(R.y_sub_weir)} m</b></div>
+        <div class="flex justify-between bg-orange-50 rounded p-2"><span>Kenaikan y hulu</span><b>${fmt(R.y_sub_weir && R.yn ? R.y_sub_weir - R.yn : null)} m</b></div>
+        <div class="flex justify-between bg-red-50 rounded p-2"><span>y kaki (superkritis)</span><b>${fmt(R.y_kaki)} m</b></div>
+        <div class="flex justify-between bg-red-50 rounded p-2"><span>Fr kaki</span><b>${fmt(R.Fr_kaki,4)}</b></div>
+        <div class="flex justify-between bg-red-50 rounded p-2"><span>y konjugat kaki</span><b>${fmt(R.y_conj_weir)} m</b></div>
+        ` : `
+        <div class="flex justify-between bg-green-50 rounded p-2"><span>y di atas ambang</span><b>${fmt(R.y_kaki)} m</b></div>
+        <div class="flex justify-between bg-green-50 rounded p-2"><span>Aliran melewati normal</span><b>—</b></div>
+        `}
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>L remous M1</span><b>${fmt(R.L_M1_weir,1)} m</b></div>
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>L ke loncatan M3</span><b>${fmt(R.L_M3_weir,1)} m</b></div>
+      </div>
+    </div>
+
+    <!-- Constriction Scenario -->
+    <div class="card p-5">
+      <div class="section-title">E. Skenario Penyempitan / Pelebaran (b₂ = ${fmt(R.b2,3)} m)</div>
+      <div class="mb-3">${conStatus}</div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>yc₂ di leher</span><b>${fmt(R.yc2)} m</b></div>
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>Emin₂ di leher</span><b>${fmt(R.Emin2)} m</b></div>
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>E₁ = Es(yn)</span><b>${fmt(R.En)} m</b></div>
+        ${R.con_blocked ? `
+        <div class="flex justify-between bg-orange-50 rounded p-2"><span>E_hulu baru (=Emin₂)</span><b>${fmt(R.E_hulu_con)} m</b></div>
+        <div class="flex justify-between bg-orange-50 rounded p-2"><span>y_sub hulu baru</span><b>${fmt(R.y_sub_con)} m</b></div>
+        <div class="flex justify-between bg-orange-50 rounded p-2"><span>Kenaikan y hulu</span><b>${fmt(R.y_sub_con && R.yn ? R.y_sub_con - R.yn : null)} m</b></div>
+        <div class="flex justify-between bg-red-50 rounded p-2"><span>y hilir (superkritis)</span><b>${fmt(R.y_hilir_con)} m</b></div>
+        <div class="flex justify-between bg-red-50 rounded p-2"><span>Fr hilir</span><b>${fmt(R.Fr_hilir_con,4)}</b></div>
+        <div class="flex justify-between bg-red-50 rounded p-2"><span>y konjugat hilir</span><b>${fmt(R.y_conj_con)} m</b></div>
+        ` : `
+        <div class="flex justify-between bg-green-50 rounded p-2"><span>y di leher (subkritis)</span><b>${fmt(R.y_hilir_con)} m</b></div>
+        `}
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>L remous M1</span><b>${fmt(R.L_M1_con,1)} m</b></div>
+        <div class="flex justify-between bg-slate-50 rounded p-2"><span>L kurva M2</span><b>${fmt(R.L_M2,1)} m</b></div>
+      </div>
+    </div>
+
+  </div>`;
+}
+
+/* ──────────────────────────────────────
+   GRAFIK TAB
+──────────────────────────────────────── */
+function renderGrafik() {
+  document.getElementById('grafik-content').innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="card p-4">
+        <h3 class="font-bold text-blue-800 mb-3 text-sm">📉 Kurva Energi Spesifik (E–y)</h3>
+        <canvas id="chartEy"></canvas>
+      </div>
+      <div class="card p-4">
+        <h3 class="font-bold text-blue-800 mb-3 text-sm">🌊 Profil Muka Air — Standard Step</h3>
+        <canvas id="chartProfile"></canvas>
+      </div>
+    </div>
+    <div class="card p-4 mt-4">
+      <h3 class="font-bold text-blue-800 mb-3 text-sm">📊 Profil Gabungan Semua Skenario</h3>
+      <canvas id="chartAll" style="max-height:320px;"></canvas>
+    </div>`;
+
+  buildEyChart();
+  buildProfileChart();
+  buildAllChart();
+}
+
+function buildEyChart() {
+  const R = G;
+  const yMax = Math.min(R.yn * 2.5, 4);
+  const pts = 120;
+  const ys = Array.from({length: pts}, (_,i) => 0.02 + (yMax - 0.02) * i / (pts - 1));
+
+  const esVals = ys.map(y => Es(y, R.Q, R.g, R.b, R.m));
+
+  // Limit to sensible range
+  const eMax = R.En * 2.5;
+  const filtered = ys.map((y,i) => ({y, e: esVals[i]})).filter(p => p.e < eMax && p.e > 0);
+
+  const ctx = document.getElementById('chartEy').getContext('2d');
+  if (chartEs) { chartEs.destroy(); chartEs = null; }
+
+  const makePoint = (y, label) => y ? [{x: Es(y,R.Q,R.g,R.b,R.m), y, label}] : [];
+
+  chartEs = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Kurva E–y',
+          data: filtered.map(p => ({x: p.e, y: p.y})),
+          type: 'line',
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,.08)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3,
+        },
+        {
+          label: `yn = ${fmt(R.yn)} m`,
+          data: [{x: R.En, y: R.yn}],
+          pointRadius: 8, pointStyle: 'circle',
+          backgroundColor: '#16a34a', borderColor: '#fff', borderWidth: 2,
+        },
+        {
+          label: `yc = ${fmt(R.yc)} m`,
+          data: [{x: R.Emin, y: R.yc}],
+          pointRadius: 8, pointStyle: 'triangle',
+          backgroundColor: '#ef4444', borderColor: '#fff', borderWidth: 2,
+        },
+        {
+          label: `y_sub Pintu = ${fmt(R.y_sub_gate)} m`,
+          data: R.y_sub_gate ? [{x: R.E1_g, y: R.y_sub_gate}] : [],
+          pointRadius: 7, pointStyle: 'rectRot',
+          backgroundColor: '#f59e0b', borderColor: '#fff', borderWidth: 2,
+        },
+        {
+          label: `y₁ Pintu = ${fmt(R.y1_gate)} m`,
+          data: [{x: R.E1_g, y: R.y1_gate}],
+          pointRadius: 7, pointStyle: 'rect',
+          backgroundColor: '#d97706', borderColor: '#fff', borderWidth: 2,
+        },
+        {
+          label: `y_sub Bendung = ${fmt(R.y_sub_weir)} m`,
+          data: R.y_sub_weir && R.E_hulu_weir ? [{x: R.E_hulu_weir, y: R.y_sub_weir}] : [],
+          pointRadius: 7, pointStyle: 'rectRot',
+          backgroundColor: '#8b5cf6', borderColor: '#fff', borderWidth: 2,
+        },
+        {
+          label: `y kaki Bendung = ${fmt(R.y_kaki)} m`,
+          data: R.y_kaki && R.E_hulu_weir ? [{x: R.E_hulu_weir, y: R.y_kaki}] : [],
+          pointRadius: 7, pointStyle: 'rect',
+          backgroundColor: '#7c3aed', borderColor: '#fff', borderWidth: 2,
+        },
+        // Emin vertical line
+        {
+          label: `Emin = ${fmt(R.Emin)} m`,
+          data: [{x: R.Emin, y: 0.01}, {x: R.Emin, y: yMax}],
+          type: 'line',
+          borderColor: '#ef4444',
+          borderDash: [5,5],
+          borderWidth: 1.5,
+          pointRadius: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'nearest', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.dataset.type === 'line' && ctx.dataset.pointRadius === 0) return null;
+              return `${ctx.dataset.label}: E=${fmt(ctx.parsed.x,4)}, y=${fmt(ctx.parsed.y,4)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Energi Spesifik Es (m)', font:{size:11} }, min: 0 },
+        y: { title: { display: true, text: 'Kedalaman y (m)', font:{size:11} }, min: 0 }
+      }
+    }
+  });
+}
+
+function buildProfileChart() {
+  const R = G;
+  if (!R.prof_gate_M1) return;
+
+  const ctx = document.getElementById('chartProfile').getContext('2d');
+  if (chartProfile) { chartProfile.destroy(); chartProfile = null; }
+
+  const makeProfile = (prof, offset, desc, color, dash=[]) => {
+    if (!prof || !prof.length) return null;
+    const pts = prof.map(p => ({x: -p.x + offset, y: p.y}));  // upstream negative
+    // For M3, downstream positive
+    return {
+      label: desc,
+      data: pts,
+      type: 'line',
+      borderColor: color,
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.2,
+      borderDash: dash
+    };
+  };
+
+  const datasets = [
+    makeProfile(R.prof_gate_M1, 0, 'M1 Hulu Pintu (subkritis)', '#3b82f6'),
+    {
+      label: 'M3 Hilir Pintu (superkritis)',
+      data: R.prof_gate_M3 ? R.prof_gate_M3.map(p => ({x: p.x, y: p.y})) : [],
+      type: 'line', borderColor: '#f59e0b', borderWidth: 2,
+      pointRadius: 0, fill: false, tension: 0.2
+    },
+    // yn line
+    {
+      label: `yn = ${fmt(R.yn)} m`,
+      data: [
+        {x: R.prof_gate_M1 ? -Math.abs(R.prof_gate_M1[R.prof_gate_M1.length-1].x)*1.05 : -100, y: R.yn},
+        {x: R.prof_gate_M3 ? R.prof_gate_M3[R.prof_gate_M3.length-1].x * 1.1 : 20, y: R.yn}
+      ],
+      type:'line', borderColor:'#16a34a', borderWidth:1.5, pointRadius:0,
+      fill:false, borderDash:[8,4]
+    },
+    {
+      label: `yc = ${fmt(R.yc)} m`,
+      data: [
+        {x: R.prof_gate_M1 ? -Math.abs(R.prof_gate_M1[R.prof_gate_M1.length-1].x)*1.05 : -100, y: R.yc},
+        {x: R.prof_gate_M3 ? R.prof_gate_M3[R.prof_gate_M3.length-1].x * 1.1 : 20, y: R.yc}
+      ],
+      type:'line', borderColor:'#ef4444', borderWidth:1.5, pointRadius:0,
+      fill:false, borderDash:[4,4]
+    }
+  ].filter(Boolean);
+
+  chartProfile = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `x=${fmt(ctx.parsed.x,1)} m, y=${fmt(ctx.parsed.y,4)} m`
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Jarak dari bangunan (m) — hulu(−) | hilir(+)', font:{size:11} } },
+        y: { title: { display: true, text: 'Kedalaman y (m)', font:{size:11} }, min: 0 }
+      }
+    }
+  });
+}
+
+function buildAllChart() {
+  const R = G;
+  const ctx = document.getElementById('chartAll').getContext('2d');
+
+  const makeDs = (prof, xOff, neg, label, color, dash=[]) => {
+    if (!prof || !prof.length) return null;
+    const data = prof.map(p => ({x: neg ? -(p.x) + xOff : p.x + xOff, y: p.y}));
+    return {
+      label, data,
+      type: 'line', borderColor: color, borderWidth: 2,
+      pointRadius: 0, fill: false, tension: 0.2, borderDash: dash
+    };
+  };
+
+  const xMax = Math.max(
+    R.L_M1_gate, R.L_M1_weir, R.L_M1_con, R.L_M2, 100
+  ) * 1.1;
+
+  const datasets = [
+    makeDs(R.prof_gate_M1, 0, true, 'M1 Pintu (hulu)', '#3b82f6'),
+    makeDs(R.prof_gate_M3, 0, false, 'M3 Pintu (hilir)', '#f59e0b'),
+    makeDs(R.prof_weir_M1, 0, true, 'M1 Bendung (hulu)', '#8b5cf6'),
+    makeDs(R.prof_weir_M3, 0, false, 'M3 Bendung (hilir)', '#d946ef'),
+    makeDs(R.prof_con_M1, 0, true, 'M1 Penyempitan (hulu)', '#06b6d4'),
+    makeDs(R.prof_M2, 0, true, 'M2 (yc → yn)', '#84cc16', [6,3]),
+    // reference lines
+    {
+      label: `yn = ${fmt(R.yn)} m`,
+      data: [{x: -xMax, y: R.yn}, {x: xMax, y: R.yn}],
+      type:'line', borderColor:'#16a34a', borderWidth:1.5, pointRadius:0,
+      fill:false, borderDash:[10,5]
+    },
+    {
+      label: `yc = ${fmt(R.yc)} m`,
+      data: [{x: -xMax, y: R.yc}, {x: xMax, y: R.yc}],
+      type:'line', borderColor:'#ef4444', borderWidth:1.5, pointRadius:0,
+      fill:false, borderDash:[4,4]
+    }
+  ].filter(Boolean);
+
+  new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: x=${fmt(ctx.parsed.x,1)} m, y=${fmt(ctx.parsed.y,4)} m`
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Jarak dari bangunan (m) — hulu(−) | hilir(+)', font:{size:11} } },
+        y: { title: { display: true, text: 'Kedalaman y (m)', font:{size:11} }, min: 0 }
+      }
+    }
+  });
+}
+
+/* ─── Auto-calculate on input change ─── */
+document.querySelectorAll('input[type=number]').forEach(inp => {
+  inp.addEventListener('input', () => calculate());
+});
+
+/* ─── Initial calculation on load ─── */
+window.addEventListener('DOMContentLoaded', () => calculate());
+</script>
+</body>
+</html>
